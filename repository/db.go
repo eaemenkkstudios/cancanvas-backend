@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/eaemenkkstudios/cancanvas-backend/graph/model"
+	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -66,6 +67,10 @@ func (db *database) FindAll() []*model.User {
 
 // New Database Client
 func New() UserRepository {
+	err := godotenv.Load()
+	if err != nil {
+		fmt.Println("No .env file found.")
+	}
 	MONGODB := os.Getenv("MONGODB_URL")
 
 	clientOptions := options.Client().ApplyURI(MONGODB)

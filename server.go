@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -17,7 +18,7 @@ const defaultPort = "8080"
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println("No .env file found.")
 	}
 	port := os.Getenv("PORT")
 	if port == "" {
