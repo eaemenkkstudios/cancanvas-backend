@@ -4,17 +4,11 @@ import (
 	"context"
 	"crypto/sha256"
 	"errors"
-	"fmt"
-	"log"
 	"math/rand"
-	"os"
-	"time"
 
 	"github.com/eaemenkkstudios/cancanvas-backend/service"
-	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // AuthRepository interface
@@ -63,26 +57,7 @@ func (db *authRespository) Login(username string, password string) (string, erro
 
 // NewAuthRepository function
 func NewAuthRepository() AuthRepository {
-	err := godotenv.Load()
-	if err != nil {
-		fmt.Println("No .env file found.")
-	}
-	MONGODB := os.Getenv("MONGODB_URL")
-
-	clientOptions := options.Client().ApplyURI(MONGODB)
-	clientOptions = clientOptions.SetMaxPoolSize(50)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	client, err := mongo.Connect(ctx, clientOptions)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println("Database Connection Succeeded!")
-
+	client := NewDatabaseClient()
 	return &authRespository{
 		client,
 	}

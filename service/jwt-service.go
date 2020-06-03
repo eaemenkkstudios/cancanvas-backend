@@ -2,7 +2,6 @@ package service
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"time"
 
@@ -36,7 +35,6 @@ func NewJWTService() JWTService {
 
 func getSecretKey() string {
 	secret := os.Getenv("JWT_SECRET")
-	log.Println("Secret: ", secret)
 	if secret == "" {
 		secret = "kenniston"
 	}
