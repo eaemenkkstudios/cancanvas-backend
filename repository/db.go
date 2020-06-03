@@ -76,7 +76,8 @@ func New() UserRepository {
 	clientOptions := options.Client().ApplyURI(MONGODB)
 	clientOptions = clientOptions.SetMaxPoolSize(50)
 
-	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
 	client, err := mongo.Connect(ctx, clientOptions)
 
