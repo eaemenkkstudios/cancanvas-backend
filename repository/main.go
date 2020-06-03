@@ -18,6 +18,8 @@ const (
 	CollectionUsers = "users"
 )
 
+var client *mongo.Client
+
 // NewDatabaseClient function
 func NewDatabaseClient() *mongo.Client {
 	err := godotenv.Load()
@@ -32,7 +34,9 @@ func NewDatabaseClient() *mongo.Client {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	client, err := mongo.Connect(ctx, clientOptions)
+	if client == nil {
+		client, err = mongo.Connect(ctx, clientOptions)
+	}
 
 	if err != nil {
 		log.Fatal(err)
