@@ -2,15 +2,22 @@
 
 package model
 
-type NewUser struct {
-	Name     string `json:"name"`
-	Email    string `json:"email"`
+type Login struct {
+	Nickname string `json:"nickname"`
 	Password string `json:"password"`
 }
 
-type User struct {
-	ID       string `bson:"_id,omitempty"`
+type NewUser struct {
+	Nickname string `json:"nickname"`
 	Name     string `json:"name"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
+	Artist   bool   `json:"artist"`
+}
+
+type User struct {
+	Nickname string `json:"nickname"`
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Artist   bool   `json:"artist"`
 }

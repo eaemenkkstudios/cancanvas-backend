@@ -3,10 +3,10 @@
 # https://gqlgen.com/getting-started/
 
 type User {
-  id: ID!
+  nickname: String!
   name: String!
   email: String!
-  password: String!
+  artist: Boolean!
 }
 
 type Query {
@@ -14,11 +14,19 @@ type Query {
 }
 
 input NewUser {
+  nickname: String!
   name: String!
   email: String!
+  password: String!
+  artist: Boolean!
+}
+
+input Login {
+  nickname: String!
   password: String!
 }
 
 type Mutation {
   createUser(input: NewUser!): User!
+  login(input: Login): String!
 }

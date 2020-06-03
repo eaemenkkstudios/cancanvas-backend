@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/eaemenkkstudios/cancanvas-backend/http"
+	"github.com/eaemenkkstudios/cancanvas-backend/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
@@ -23,8 +23,8 @@ func main() {
 
 	server := gin.Default()
 
-	server.GET("/", http.PlaygroundHandler())
-	server.POST("/query", http.GraphQLHandler())
+	server.GET("/", middleware.PlaygroundHandler())
+	server.POST("/query", middleware.GraphQLHandler())
 
 	server.Run(":" + port)
 }

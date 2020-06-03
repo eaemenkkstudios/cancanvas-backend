@@ -11,20 +11,17 @@ import (
 	"github.com/eaemenkkstudios/cancanvas-backend/repository"
 )
 
-var users repository.UserRepository = repository.New()
-
 func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) (*model.User, error) {
-	newUser := &model.NewUser{
-		Email:    input.Email,
-		Name:     input.Name,
-		Password: input.Password,
-	}
-	user := users.Save(newUser)
+	user := repository.NewUserRepository().Save(&input)
 	return user, nil
 }
 
+func (r *mutationResolver) Login(ctx context.Context, input *model.Login) (string, error) {
+	return repository.NewAuthRepository().Login(input.Nickname, input.Password)
+}
+
 func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
-	return users.FindAll(), nil
+	return repository.NewUserRepository().FindAll(), nil
 }
 
 // Mutation returns generated.MutationResolver implementation.
