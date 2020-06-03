@@ -9,5 +9,4 @@ require (
 	github.com/joho/godotenv v1.3.0
 	github.com/vektah/gqlparser/v2 v2.0.1
 	go.mongodb.org/mongo-driver v1.3.3
-	golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550
 )

@@ -2,10 +2,9 @@ package repository
 
 import (
 	"context"
+	"crypto/sha256"
 	"errors"
 	"math/rand"
-
-	"golang.org/x/crypto/bcrypt"
 
 	"github.com/eaemenkkstudios/cancanvas-backend/service"
 	"go.mongodb.org/mongo-driver/bson"
@@ -37,16 +36,8 @@ func GetSalt() string {
 
 // GetHash function
 func GetHash(salt string, password string) string {
-	hash, err := bcrypt.GenerateFromPassword([]byte(salt+password), 20)
-	if err != nil {
-		return ""
-	}
+	hash := sha256.Sum256([]byte(salt + password))
 	return string(hash[:])
-}
-
-// ValidatePassword function
-func ValidatePassword(password string, salt string, hash string) bool {
-	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(salt+password)) == nil
 }
 
 func (db *authRespository) Login(username string, password string) (string, error) {
@@ -57,7 +48,7 @@ func (db *authRespository) Login(username string, password string) (string, erro
 	if err != nil {
 		return "", err
 	}
-	if valid := ValidatePassword(password, u.Password.Salt, u.Password.Hash); valid {
+	if pass := GetHash(u.Password.Salt, password); pass == u.Password.Hash {
 		token := service.NewJWTService().GenerateToken(username, false)
 		return token, nil
 	}
