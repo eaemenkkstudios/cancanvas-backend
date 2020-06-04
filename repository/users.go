@@ -57,24 +57,30 @@ func (db *userRepository) Save(user *model.NewUser) (*model.User, error) {
 			Salt: salt,
 		},
 	})
+	if err != nil {
+		return nil, errors.New("User " + user.Nickname + " already exists")
+	}
 	return &model.User{
 		Email:    user.Email,
 		Artist:   user.Artist,
 		Name:     user.Name,
 		Nickname: user.Nickname,
-	}, err
+	}, nil
 }
 
 func (db *userRepository) FindOne(nickname string) (*model.User, error) {
 	result := db.collection.FindOne(context.TODO(), bson.M{"_id": nickname})
 	var user *UserSchema
 	err := result.Decode(&user)
+	if err != nil {
+		return nil, errors.New("User not found")
+	}
 	return &model.User{
 		Email:    user.Email,
 		Name:     user.Name,
 		Artist:   user.Artist,
 		Nickname: user.Nickname,
-	}, err
+	}, nil
 }
 
 func (db *userRepository) FindAll() ([]*model.User, error) {

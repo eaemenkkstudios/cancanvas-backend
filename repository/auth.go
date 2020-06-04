@@ -46,7 +46,7 @@ func (db *authRespository) Login(username string, password string) (string, erro
 	var user *UserSchema
 	err := result.Decode(&user)
 	if err != nil {
-		return "", err
+		return "", errors.New("Unauthorized")
 	}
 	if pass := GetHash(user.Password.Salt, password); pass == user.Password.Hash {
 		token := service.NewJWTService().GenerateToken(username, false)
