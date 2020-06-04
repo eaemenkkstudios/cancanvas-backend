@@ -22,7 +22,41 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) 
 	return userRepository.Save(&input)
 }
 
+func (r *mutationResolver) Follow(ctx context.Context, nickname string) (bool, error) {
+	token := ctx.Value("token")
+	if token == nil {
+		return false, errors.New("Unauthorized")
+	}
+	claims, err := jwtService.GetClaimsFromToken(fmt.Sprintf("%v", token))
+	if err != nil {
+		return false, errors.New("Unauthorized")
+	}
+	sender := fmt.Sprintf("%v", claims["name"])
+	return userRepository.Follow(sender, nickname)
+}
+
+func (r *mutationResolver) Unfollow(ctx context.Context, nickname string) (bool, error) {
+	token := ctx.Value("token")
+	if token == nil {
+		return false, errors.New("Unauthorized")
+	}
+	claims, err := jwtService.GetClaimsFromToken(fmt.Sprintf("%v", token))
+	if err != nil {
+		return false, errors.New("Unauthorized")
+	}
+	sender := fmt.Sprintf("%v", claims["name"])
+	return userRepository.Unfollow(sender, nickname)
+}
+
 func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
+	token := ctx.Value("token")
+	if token == nil {
+		return nil, errors.New("Unauthorized")
+	}
+	result, err := jwtService.ValidateToken(fmt.Sprintf("%v", token))
+	if err != nil || !result.Valid {
+		return nil, errors.New("Unauthorized")
+	}
 	return userRepository.FindAll()
 }
 
@@ -53,6 +87,19 @@ func (r *queryResolver) Self(ctx context.Context) (*model.User, error) {
 
 func (r *queryResolver) Login(ctx context.Context, nickname string, password string) (string, error) {
 	return authRepository.Login(nickname, password)
+}
+
+func (r *queryResolver) IsFollowing(ctx context.Context, nickname string) (bool, error) {
+	token := ctx.Value("token")
+	if token == nil {
+		return false, errors.New("Unauthorized")
+	}
+	claims, err := jwtService.GetClaimsFromToken(fmt.Sprintf("%v", token))
+	if err != nil {
+		return false, errors.New("Unauthorized")
+	}
+	sender := fmt.Sprintf("%v", claims["name"])
+	return userRepository.IsFollowing(sender, nickname), nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

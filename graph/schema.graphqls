@@ -14,6 +14,7 @@ type Query {
   user(nickname: String!): User!
   self: User!
   login(nickname: String!, password: String!): String!
+  isFollowing(nickname: String!): Boolean!
 }
 
 input NewUser {
@@ -26,4 +27,6 @@ input NewUser {
 
 type Mutation {
   createUser(input: NewUser!): User!
+  follow(nickname: String!): Boolean!
+  unfollow(nickname: String!): Boolean!
 }
