@@ -15,8 +15,7 @@ var userRepository repository.UserRepository = repository.NewUserRepository()
 var authRepository repository.AuthRepository = repository.NewAuthRepository()
 
 func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) (*model.User, error) {
-	user := userRepository.Save(&input)
-	return user, nil
+	return userRepository.Save(&input)
 }
 
 func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {

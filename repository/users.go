@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"log"
 
 	"github.com/eaemenkkstudios/cancanvas-backend/graph/model"
 	"go.mongodb.org/mongo-driver/bson"
@@ -11,7 +10,7 @@ import (
 
 // UserRepository Interface
 type UserRepository interface {
-	Save(user *model.NewUser) *model.User
+	Save(user *model.NewUser) (*model.User, error)
 	FindOne(nickname string) (*model.User, error)
 	FindAll() ([]*model.User, error)
 }
@@ -37,7 +36,7 @@ type UserSchema struct {
 	Password  password `json:"password"`
 }
 
-func (db *userRepository) Save(user *model.NewUser) *model.User {
+func (db *userRepository) Save(user *model.NewUser) (*model.User, error) {
 	collection := db.client.Database(Database).Collection(CollectionUsers)
 	salt := GetSalt()
 	_, err := collection.InsertOne(context.TODO(), &UserSchema{
@@ -53,15 +52,12 @@ func (db *userRepository) Save(user *model.NewUser) *model.User {
 			Salt: salt,
 		},
 	})
-	if err != nil {
-		log.Fatal(err)
-	}
 	return &model.User{
 		Email:    user.Email,
 		Artist:   user.Artist,
 		Name:     user.Name,
 		Nickname: user.Nickname,
-	}
+	}, err
 }
 
 func (db *userRepository) FindOne(nickname string) (*model.User, error) {
