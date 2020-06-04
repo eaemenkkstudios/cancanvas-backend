@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -12,6 +13,7 @@ import (
 type JWTService interface {
 	GenerateToken(name string, admin bool) string
 	ValidateToken(tokenString string) (*jwt.Token, error)
+	GetClaimsFromToken(tokenString string) (map[string]interface{}, error)
 }
 
 type jwtCustomClaims struct {
@@ -70,4 +72,12 @@ func (jwtSrv *jwtService) ValidateToken(tokenString string) (*jwt.Token, error) 
 		return []byte(jwtSrv.secretKey), nil
 	})
 
+}
+
+func (jwtSrv *jwtService) GetClaimsFromToken(tokenString string) (map[string]interface{}, error) {
+	result, err := jwtSrv.ValidateToken(tokenString)
+	if err != nil || !result.Valid {
+		return nil, errors.New("Could not validate token")
+	}
+	return result.Claims.(jwt.MapClaims), nil
 }

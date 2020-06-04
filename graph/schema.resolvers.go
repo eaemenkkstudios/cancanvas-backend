@@ -5,14 +5,18 @@ package graph
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/eaemenkkstudios/cancanvas-backend/graph/generated"
 	"github.com/eaemenkkstudios/cancanvas-backend/graph/model"
 	"github.com/eaemenkkstudios/cancanvas-backend/repository"
+	"github.com/eaemenkkstudios/cancanvas-backend/service"
 )
 
-var userRepository repository.UserRepository = repository.NewUserRepository()
-var authRepository repository.AuthRepository = repository.NewAuthRepository()
+var userRepository = repository.NewUserRepository()
+var authRepository = repository.NewAuthRepository()
+var jwtService = service.NewJWTService()
 
 func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) (*model.User, error) {
 	return userRepository.Save(&input)
@@ -23,6 +27,27 @@ func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
 }
 
 func (r *queryResolver) User(ctx context.Context, nickname string) (*model.User, error) {
+	token := ctx.Value("token")
+	if token == nil {
+		return nil, errors.New("Unauthorized")
+	}
+	result, err := jwtService.ValidateToken(fmt.Sprintf("%v", token))
+	if err != nil || !result.Valid {
+		return nil, errors.New("Unauthorized")
+	}
+	return userRepository.FindOne(nickname)
+}
+
+func (r *queryResolver) Self(ctx context.Context) (*model.User, error) {
+	token := ctx.Value("token")
+	if token == nil {
+		return nil, errors.New("Unauthorized")
+	}
+	claims, err := jwtService.GetClaimsFromToken(fmt.Sprintf("%v", token))
+	if err != nil {
+		return nil, errors.New("Unauthorized")
+	}
+	nickname := fmt.Sprintf("%v", claims["name"])
 	return userRepository.FindOne(nickname)
 }
 

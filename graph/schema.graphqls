@@ -12,6 +12,7 @@ type User {
 type Query {
   users: [User!]!
   user(nickname: String!): User!
+  self: User!
   login(nickname: String!, password: String!): String!
 }
 
