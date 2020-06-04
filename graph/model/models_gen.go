@@ -2,11 +2,6 @@
 
 package model
 
-type Login struct {
-	Nickname string `json:"nickname"`
-	Password string `json:"password"`
-}
-
 type NewUser struct {
 	Nickname string `json:"nickname"`
 	Name     string `json:"name"`

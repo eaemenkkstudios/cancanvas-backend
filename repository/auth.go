@@ -42,13 +42,13 @@ func GetHash(salt string, password string) string {
 
 func (db *authRespository) Login(username string, password string) (string, error) {
 	collection := db.client.Database(Database).Collection(CollectionUsers)
-	user := collection.FindOne(context.TODO(), bson.M{"_id": username})
-	var u *UserSchema
-	err := user.Decode(&u)
+	result := collection.FindOne(context.TODO(), bson.M{"_id": username})
+	var user *UserSchema
+	err := result.Decode(&user)
 	if err != nil {
 		return "", err
 	}
-	if pass := GetHash(u.Password.Salt, password); pass == u.Password.Hash {
+	if pass := GetHash(user.Password.Salt, password); pass == user.Password.Hash {
 		token := service.NewJWTService().GenerateToken(username, false)
 		return token, nil
 	}

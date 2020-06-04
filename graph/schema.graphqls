@@ -11,6 +11,8 @@ type User {
 
 type Query {
   users: [User!]!
+  user(nickname: String!): User!
+  login(nickname: String!, password: String!): String!
 }
 
 input NewUser {
@@ -21,12 +23,6 @@ input NewUser {
   artist: Boolean!
 }
 
-input Login {
-  nickname: String!
-  password: String!
-}
-
 type Mutation {
   createUser(input: NewUser!): User!
-  login(input: Login): String!
 }

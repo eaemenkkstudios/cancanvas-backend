@@ -19,12 +19,16 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) 
 	return user, nil
 }
 
-func (r *mutationResolver) Login(ctx context.Context, input *model.Login) (string, error) {
-	return authRepository.Login(input.Nickname, input.Password)
-}
-
 func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
 	return userRepository.FindAll(), nil
+}
+
+func (r *queryResolver) User(ctx context.Context, nickname string) (*model.User, error) {
+	return userRepository.FindOne(nickname)
+}
+
+func (r *queryResolver) Login(ctx context.Context, nickname string, password string) (string, error) {
+	return authRepository.Login(nickname, password)
 }
 
 // Mutation returns generated.MutationResolver implementation.

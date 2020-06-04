@@ -12,6 +12,7 @@ import (
 // UserRepository Interface
 type UserRepository interface {
 	Save(user *model.NewUser) *model.User
+	FindOne(nickname string) (*model.User, error)
 	FindAll() []*model.User
 }
 
@@ -61,6 +62,19 @@ func (db *userRepository) Save(user *model.NewUser) *model.User {
 		Name:     user.Name,
 		Nickname: user.Nickname,
 	}
+}
+
+func (db *userRepository) FindOne(nickname string) (*model.User, error) {
+	collection := db.client.Database(Database).Collection(CollectionUsers)
+	result := collection.FindOne(context.TODO(), bson.M{"_id": nickname})
+	var user *UserSchema
+	err := result.Decode(&user)
+	return &model.User{
+		Email:    user.Email,
+		Name:     user.Name,
+		Artist:   user.Artist,
+		Nickname: user.Nickname,
+	}, err
 }
 
 func (db *userRepository) FindAll() []*model.User {
