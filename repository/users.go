@@ -13,7 +13,7 @@ import (
 type UserRepository interface {
 	Save(user *model.NewUser) *model.User
 	FindOne(nickname string) (*model.User, error)
-	FindAll() []*model.User
+	FindAll() ([]*model.User, error)
 }
 
 type userRepository struct {
@@ -77,23 +77,17 @@ func (db *userRepository) FindOne(nickname string) (*model.User, error) {
 	}, err
 }
 
-func (db *userRepository) FindAll() []*model.User {
+func (db *userRepository) FindAll() ([]*model.User, error) {
 	collection := db.client.Database(Database).Collection(CollectionUsers)
 	cursor, err := collection.Find(context.TODO(), bson.D{})
-	if err != nil {
-		log.Fatal(err)
-	}
 	defer cursor.Close(context.TODO())
 	var users []*model.User
 	for cursor.Next(context.TODO()) {
 		var u *model.User
-		err := cursor.Decode(&u)
-		if err != nil {
-			log.Fatal(err)
-		}
+		err = cursor.Decode(&u)
 		users = append(users, u)
 	}
-	return users
+	return users, err
 }
 
 // NewUserRepository function

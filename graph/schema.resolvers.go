@@ -20,7 +20,7 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) 
 }
 
 func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
-	return userRepository.FindAll(), nil
+	return userRepository.FindAll()
 }
 
 func (r *queryResolver) User(ctx context.Context, nickname string) (*model.User, error) {

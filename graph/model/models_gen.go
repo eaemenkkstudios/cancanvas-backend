@@ -11,7 +11,7 @@ type NewUser struct {
 }
 
 type User struct {
-	Nickname string `json:"nickname"`
+	Nickname string `json:"nickname" bson:"_id"`
 	Name     string `json:"name"`
 	Email    string `json:"email"`
 	Artist   bool   `json:"artist"`
