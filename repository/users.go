@@ -80,10 +80,14 @@ func (db *userRepository) FindOne(nickname string) (*model.User, error) {
 		return nil, errors.New("User not found")
 	}
 	return &model.User{
-		Email:    user.Email,
-		Name:     user.Name,
-		Artist:   user.Artist,
-		Nickname: user.Nickname,
+		Email:          user.Email,
+		Name:           user.Name,
+		Artist:         user.Artist,
+		Nickname:       user.Nickname,
+		Followers:      user.Followers,
+		FollowersCount: user.FollowersCount,
+		Following:      user.Following,
+		Galery:         user.Gallery,
 	}, nil
 }
 
@@ -92,9 +96,18 @@ func (db *userRepository) FindAll() ([]*model.User, error) {
 	defer cursor.Close(context.TODO())
 	var users []*model.User
 	for cursor.Next(context.TODO()) {
-		var u *model.User
+		var u *UserSchema
 		err = cursor.Decode(&u)
-		users = append(users, u)
+		users = append(users, &model.User{
+			Nickname:       u.Nickname,
+			Name:           u.Name,
+			Email:          u.Email,
+			Artist:         u.Artist,
+			Followers:      u.Followers,
+			FollowersCount: u.FollowersCount,
+			Following:      u.Following,
+			Galery:         u.Gallery,
+		})
 	}
 	return users, err
 }

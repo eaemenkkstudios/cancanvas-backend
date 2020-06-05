@@ -29,10 +29,11 @@ type chatRepository struct {
 type Chat struct {
 	ID       string    `json:"_id,omitempty" bson:"_id,omitempty"`
 	Users    []string  `json:"users"`
-	Messages []message `json:"messages"`
+	Messages []Message `json:"messages"`
 }
 
-type message struct {
+// Message struct
+type Message struct {
 	Message   string    `json:"message"`
 	Timestamp time.Time `json:"timestamp"`
 	Sender    string    `json:"sender"`
@@ -159,7 +160,7 @@ func (db *chatRepository) NewChatMessage(sender string) (<-chan *model.Message, 
 func (db *chatRepository) createChat(sender string, receiver string) (string, error) {
 	collection := db.client.Database(Database).Collection(CollectionChats)
 	result, err := collection.InsertOne(context.TODO(), &Chat{
-		Messages: make([]message, 0),
+		Messages: make([]Message, 0),
 		Users:    []string{sender, receiver},
 	})
 	if err != nil {
@@ -170,7 +171,7 @@ func (db *chatRepository) createChat(sender string, receiver string) (string, er
 
 func (db *chatRepository) addMessageToChat(chatID string, message string, sender string) error {
 	collection := db.client.Database(Database).Collection(CollectionChats)
-	msg := &model.Message{
+	msg := &Message{
 		Message:   message,
 		Sender:    sender,
 		Timestamp: time.Now(),

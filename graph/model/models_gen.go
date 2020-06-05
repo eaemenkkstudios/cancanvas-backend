@@ -36,7 +36,7 @@ type CommentList struct {
 }
 
 type Message struct {
-	ChatID    string    `json:"ChatID"`
+	ChatID    string    `json:"chatID"`
 	Message   string    `json:"message"`
 	Timestamp time.Time `json:"timestamp"`
 	Sender    string    `json:"sender"`
@@ -82,10 +82,14 @@ type ReactionList struct {
 }
 
 type User struct {
-	Nickname string `json:"nickname" bson:"_id"`
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Artist   bool   `json:"artist"`
+	Nickname       string   `json:"nickname"`
+	Name           string   `json:"name"`
+	Email          string   `json:"email"`
+	Artist         bool     `json:"artist"`
+	Galery         []string `json:"galery"`
+	Followers      []string `json:"followers"`
+	FollowersCount int      `json:"followersCount"`
+	Following      []string `json:"following"`
 }
 
 type Emote string

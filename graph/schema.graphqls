@@ -63,7 +63,7 @@ type Auction {
 }
 
 type Message {
-  ChatID: ID!
+  chatID: ID!
   message: String!
   timestamp: Time!
   sender: String!
@@ -80,6 +80,10 @@ type User {
   name: String!
   email: String!
   artist: Boolean!
+  galery: [String!]!
+  followers: [String!]!
+  followersCount: Int!
+  following: [String!]!
 }
 
 type Query {
