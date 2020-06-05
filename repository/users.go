@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"errors"
+	"log"
 
 	"github.com/eaemenkkstudios/cancanvas-backend/graph/model"
 	"go.mongodb.org/mongo-driver/bson"
@@ -29,29 +30,38 @@ type password struct {
 	Salt string `json:"salt"`
 }
 
+type chat struct {
+	ChatID   string `json:"chatid"`
+	Receiver string `json:"receiver"`
+}
+
 // UserSchema struct
 type UserSchema struct {
-	Nickname  string   `json:"nickname" bson:"_id"`
-	Name      string   `json:"name"`
-	Email     string   `json:"email"`
-	Artist    bool     `json:"artist"`
-	Gallery   []string `json:"gallery"`
-	Followers int      `json:"followers"`
-	Following []string `json:"following"`
-	Password  password `json:"password"`
+	Nickname       string   `json:"nickname" bson:"_id"`
+	Name           string   `json:"name"`
+	Email          string   `json:"email"`
+	Artist         bool     `json:"artist"`
+	Gallery        []string `json:"gallery"`
+	Followers      []string `json:"followers"`
+	FollowersCount int      `json:"followerscount"`
+	Following      []string `json:"following"`
+	Password       password `json:"password"`
+	Chats          []chat   `json:"chats"`
 }
 
 func (db *userRepository) Save(user *model.NewUser) (*model.User, error) {
 	collection := db.client.Database(Database).Collection(CollectionUsers)
 	salt := GetSalt()
 	_, err := collection.InsertOne(context.TODO(), &UserSchema{
-		Email:     user.Email,
-		Nickname:  user.Nickname,
-		Artist:    user.Artist,
-		Name:      user.Name,
-		Gallery:   make([]string, 0),
-		Following: make([]string, 0),
-		Followers: 0,
+		Email:          user.Email,
+		Nickname:       user.Nickname,
+		Artist:         user.Artist,
+		Name:           user.Name,
+		Gallery:        make([]string, 0),
+		Following:      make([]string, 0),
+		FollowersCount: 0,
+		Followers:      make([]string, 0),
+		Chats:          make([]chat, 0),
 		Password: password{
 			Hash: GetHash(salt, user.Password),
 			Salt: salt,
@@ -120,7 +130,8 @@ func (db *userRepository) Follow(sender string, target string) (bool, error) {
 		}
 	}
 	senderUser.Following = append(senderUser.Following, target)
-	targetUser.Followers++
+	targetUser.Followers = append(targetUser.Followers, sender)
+	targetUser.FollowersCount++
 
 	_, err = db.collection.UpdateOne(context.TODO(), bson.M{"_id": sender}, bson.M{
 		"$set": bson.M{"following": senderUser.Following},
@@ -130,7 +141,10 @@ func (db *userRepository) Follow(sender string, target string) (bool, error) {
 	}
 
 	_, err = db.collection.UpdateOne(context.TODO(), bson.M{"_id": target}, bson.M{
-		"$set": bson.M{"followers": targetUser.Followers},
+		"$set": bson.M{
+			"followers":      targetUser.Followers,
+			"followerscount": targetUser.FollowersCount,
+		},
 	})
 	if err != nil {
 		return false, err
@@ -168,8 +182,8 @@ func (db *userRepository) Unfollow(sender string, target string) (bool, error) {
 	if err != nil {
 		return false, errors.New("User " + target + " doesn't exist")
 	}
-	targetUser.Followers--
-
+	targetUser.FollowersCount--
+	log.Fatal("TODO: ALTERAR FUNÇÃO")
 	_, err = db.collection.UpdateOne(context.TODO(), bson.M{"_id": sender}, bson.M{
 		"$set": bson.M{"following": senderUser.Following},
 	})

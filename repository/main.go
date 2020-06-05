@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"time"
@@ -16,14 +15,12 @@ import (
 const (
 	Database        = "cancanvas"
 	CollectionUsers = "users"
+	CollectionChats = "chats"
 )
 
 // NewDatabaseClient function
 func NewDatabaseClient() *mongo.Client {
 	err := godotenv.Load()
-	if err != nil {
-		fmt.Println("No .env file found.")
-	}
 	MONGODB := os.Getenv("MONGODB_URL")
 
 	clientOptions := options.Client().ApplyURI(MONGODB)
@@ -37,8 +34,6 @@ func NewDatabaseClient() *mongo.Client {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	fmt.Println("Database Connection Succeeded!")
 
 	return client
 }

@@ -2,6 +2,78 @@
 #
 # https://gqlgen.com/getting-started/
 
+scalar Time
+scalar Upload
+
+enum Emote {
+  THUMBSUP,
+  CLAP,
+  HEART
+}
+
+type ReactionList {
+  list: [Reaction!]!
+  count: [ReactionCount!]!
+}
+
+type Reaction {
+  author: String!
+  emote: Emote!
+}
+
+type ReactionCount {
+  emote: Emote!
+  count: Int!
+}
+
+type CommentList {
+  list: [Comment!]!
+  count: Int!
+}
+
+type Comment {
+  author: String!
+  text: String!
+  reactions: ReactionList!
+  timestamp: Time!
+}
+
+type Post {
+  author: String!
+  description: String
+  content: String!
+  timestamp: Time!
+  comments: CommentList!
+  reactions: ReactionList!
+}
+
+type Proposal {
+  issuer: String!
+  price: Float!
+  timestamp: Time!
+  subscribed: Boolean!
+}
+
+type Auction {
+  host: String!
+  offer: Float!
+  proposals: [Proposal!]!
+  timestamp: Time!
+  deadline: Time!
+}
+
+type Message {
+  message: String!
+  timestamp: Time!
+  sender: String!
+}
+
+type Chat {
+  ID: ID!
+  users: [String!]!
+  messages: [Message!]!
+}
+
 type User {
   nickname: String!
   name: String!
@@ -29,4 +101,9 @@ type Mutation {
   createUser(input: NewUser!): User!
   follow(nickname: String!): Boolean!
   unfollow(nickname: String!): Boolean!
+  sendMessage(msg: String!, receiver: String!): Boolean!
+}
+
+type Subscription {
+  newChatMessage(id: ID!): Message!
 }

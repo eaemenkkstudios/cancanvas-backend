@@ -2,6 +2,45 @@
 
 package model
 
+import (
+	"fmt"
+	"io"
+	"strconv"
+	"time"
+)
+
+type Auction struct {
+	Host      string      `json:"host"`
+	Offer     float64     `json:"offer"`
+	Proposals []*Proposal `json:"proposals"`
+	Timestamp time.Time   `json:"timestamp"`
+	Deadline  time.Time   `json:"deadline"`
+}
+
+type Chat struct {
+	ID       string     `json:"ID"`
+	Users    []string   `json:"users"`
+	Messages []*Message `json:"messages"`
+}
+
+type Comment struct {
+	Author    string        `json:"author"`
+	Text      string        `json:"text"`
+	Reactions *ReactionList `json:"reactions"`
+	Timestamp time.Time     `json:"timestamp"`
+}
+
+type CommentList struct {
+	List  []*Comment `json:"list"`
+	Count int        `json:"count"`
+}
+
+type Message struct {
+	Message   string    `json:"message"`
+	Timestamp time.Time `json:"timestamp"`
+	Sender    string    `json:"sender"`
+}
+
 type NewUser struct {
 	Nickname string `json:"nickname"`
 	Name     string `json:"name"`
@@ -10,9 +49,83 @@ type NewUser struct {
 	Artist   bool   `json:"artist"`
 }
 
+type Post struct {
+	Author      string        `json:"author"`
+	Description *string       `json:"description"`
+	Content     string        `json:"content"`
+	Timestamp   time.Time     `json:"timestamp"`
+	Comments    *CommentList  `json:"comments"`
+	Reactions   *ReactionList `json:"reactions"`
+}
+
+type Proposal struct {
+	Issuer     string    `json:"issuer"`
+	Price      float64   `json:"price"`
+	Timestamp  time.Time `json:"timestamp"`
+	Subscribed bool      `json:"subscribed"`
+}
+
+type Reaction struct {
+	Author string `json:"author"`
+	Emote  Emote  `json:"emote"`
+}
+
+type ReactionCount struct {
+	Emote Emote `json:"emote"`
+	Count int   `json:"count"`
+}
+
+type ReactionList struct {
+	List  []*Reaction      `json:"list"`
+	Count []*ReactionCount `json:"count"`
+}
+
 type User struct {
-	Nickname string `json:"nickname" bson:"_id"`
+	Nickname string `json:"nickname"`
 	Name     string `json:"name"`
 	Email    string `json:"email"`
 	Artist   bool   `json:"artist"`
+}
+
+type Emote string
+
+const (
+	EmoteThumbsup Emote = "THUMBSUP"
+	EmoteClap     Emote = "CLAP"
+	EmoteHeart    Emote = "HEART"
+)
+
+var AllEmote = []Emote{
+	EmoteThumbsup,
+	EmoteClap,
+	EmoteHeart,
+}
+
+func (e Emote) IsValid() bool {
+	switch e {
+	case EmoteThumbsup, EmoteClap, EmoteHeart:
+		return true
+	}
+	return false
+}
+
+func (e Emote) String() string {
+	return string(e)
+}
+
+func (e *Emote) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = Emote(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid Emote", str)
+	}
+	return nil
+}
+
+func (e Emote) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }
