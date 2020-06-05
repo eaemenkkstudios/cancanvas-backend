@@ -5,97 +5,62 @@ package graph
 
 import (
 	"context"
-	"errors"
-	"fmt"
 
 	"github.com/eaemenkkstudios/cancanvas-backend/graph/generated"
 	"github.com/eaemenkkstudios/cancanvas-backend/graph/model"
 	"github.com/eaemenkkstudios/cancanvas-backend/repository"
-	"github.com/eaemenkkstudios/cancanvas-backend/service"
+	"github.com/eaemenkkstudios/cancanvas-backend/utils"
 )
-
-var userRepository = repository.NewUserRepository()
-var authRepository = repository.NewAuthRepository()
-var chatRepository = repository.NewChatRepository()
-var jwtService = service.NewJWTService()
 
 func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) (*model.User, error) {
 	return userRepository.Save(&input)
 }
 
 func (r *mutationResolver) Follow(ctx context.Context, nickname string) (bool, error) {
-	token := ctx.Value("token")
-	if token == nil {
-		return false, errors.New("Unauthorized")
-	}
-	claims, err := jwtService.GetClaimsFromToken(fmt.Sprintf("%v", token))
+	sender, err := utils.GetSenderFromTokenHTTP(ctx)
 	if err != nil {
-		return false, errors.New("Unauthorized")
+		return false, err
 	}
-	sender := fmt.Sprintf("%v", claims["name"])
 	return userRepository.Follow(sender, nickname)
 }
 
 func (r *mutationResolver) Unfollow(ctx context.Context, nickname string) (bool, error) {
-	token := ctx.Value("token")
-	if token == nil {
-		return false, errors.New("Unauthorized")
-	}
-	claims, err := jwtService.GetClaimsFromToken(fmt.Sprintf("%v", token))
+	sender, err := utils.GetSenderFromTokenHTTP(ctx)
 	if err != nil {
-		return false, errors.New("Unauthorized")
+		return false, err
 	}
-	sender := fmt.Sprintf("%v", claims["name"])
 	return userRepository.Unfollow(sender, nickname)
 }
 
 func (r *mutationResolver) SendMessage(ctx context.Context, msg string, receiver string) (bool, error) {
-	/* token := ctx.Value("token")
-	if token == nil {
-		return false, errors.New("Unauthorized")
-	}
-	claims, err := jwtService.GetClaimsFromToken(fmt.Sprintf("%v", token))
+	sender, err := utils.GetSenderFromTokenHTTP(ctx)
 	if err != nil {
-		return false, errors.New("Unauthorized")
+		return false, err
 	}
-	sender := fmt.Sprintf("%v", claims["name"]) */
-	panic(fmt.Errorf("not implemented"))
+	return chatRepository.SendMessage(sender, msg, receiver)
 }
 
 func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
-	token := ctx.Value("token")
-	if token == nil {
-		return nil, errors.New("Unauthorized")
-	}
-	result, err := jwtService.ValidateToken(fmt.Sprintf("%v", token))
-	if err != nil || !result.Valid {
-		return nil, errors.New("Unauthorized")
+	_, err := utils.GetSenderFromTokenHTTP(ctx)
+	if err != nil {
+		return nil, err
 	}
 	return userRepository.FindAll()
 }
 
 func (r *queryResolver) User(ctx context.Context, nickname string) (*model.User, error) {
-	token := ctx.Value("token")
-	if token == nil {
-		return nil, errors.New("Unauthorized")
-	}
-	result, err := jwtService.ValidateToken(fmt.Sprintf("%v", token))
-	if err != nil || !result.Valid {
-		return nil, errors.New("Unauthorized")
+	nickname, err := utils.GetSenderFromTokenHTTP(ctx)
+	if err != nil {
+		return nil, err
 	}
 	return userRepository.FindOne(nickname)
 }
 
 func (r *queryResolver) Self(ctx context.Context) (*model.User, error) {
-	token := ctx.Value("token")
-	if token == nil {
-		return nil, errors.New("Unauthorized")
-	}
-	claims, err := jwtService.GetClaimsFromToken(fmt.Sprintf("%v", token))
+	nickname, err := utils.GetSenderFromTokenHTTP(ctx)
 	if err != nil {
-		return nil, errors.New("Unauthorized")
+		return nil, err
 	}
-	nickname := fmt.Sprintf("%v", claims["name"])
 	return userRepository.FindOne(nickname)
 }
 
@@ -104,20 +69,19 @@ func (r *queryResolver) Login(ctx context.Context, nickname string, password str
 }
 
 func (r *queryResolver) IsFollowing(ctx context.Context, nickname string) (bool, error) {
-	token := ctx.Value("token")
-	if token == nil {
-		return false, errors.New("Unauthorized")
-	}
-	claims, err := jwtService.GetClaimsFromToken(fmt.Sprintf("%v", token))
+	sender, err := utils.GetSenderFromTokenHTTP(ctx)
 	if err != nil {
-		return false, errors.New("Unauthorized")
+		return false, err
 	}
-	sender := fmt.Sprintf("%v", claims["name"])
 	return userRepository.IsFollowing(sender, nickname), nil
 }
 
-func (r *subscriptionResolver) NewChatMessage(ctx context.Context, id string) (<-chan *model.Message, error) {
-	panic(fmt.Errorf("not implemented"))
+func (r *subscriptionResolver) NewChatMessage(ctx context.Context) (<-chan *model.Message, error) {
+	sender, err := utils.GetSenderFromTokenSocket(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return chatRepository.NewChatMessage(sender)
 }
 
 // Mutation returns generated.MutationResolver implementation.
@@ -132,3 +96,13 @@ func (r *Resolver) Subscription() generated.SubscriptionResolver { return &subsc
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type subscriptionResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//    it when you're done.
+//  - You have helper methods in this file. Move them out to keep these resolver files clean.
+var userRepository = repository.NewUserRepository()
+var authRepository = repository.NewAuthRepository()
+var chatRepository = repository.NewChatRepository()

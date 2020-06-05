@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"errors"
-	"log"
 
 	"github.com/eaemenkkstudios/cancanvas-backend/graph/model"
 	"go.mongodb.org/mongo-driver/bson"
@@ -30,23 +29,18 @@ type password struct {
 	Salt string `json:"salt"`
 }
 
-type chat struct {
-	ChatID   string `json:"chatid"`
-	Receiver string `json:"receiver"`
-}
-
 // UserSchema struct
 type UserSchema struct {
-	Nickname       string   `json:"nickname" bson:"_id"`
-	Name           string   `json:"name"`
-	Email          string   `json:"email"`
-	Artist         bool     `json:"artist"`
-	Gallery        []string `json:"gallery"`
-	Followers      []string `json:"followers"`
-	FollowersCount int      `json:"followerscount"`
-	Following      []string `json:"following"`
-	Password       password `json:"password"`
-	Chats          []chat   `json:"chats"`
+	Nickname       string     `json:"nickname" bson:"_id"`
+	Name           string     `json:"name"`
+	Email          string     `json:"email"`
+	Artist         bool       `json:"artist"`
+	Gallery        []string   `json:"gallery"`
+	Followers      []string   `json:"followers"`
+	FollowersCount int        `json:"followerscount"`
+	Following      []string   `json:"following"`
+	Password       password   `json:"password"`
+	Chats          []userChat `json:"chats"`
 }
 
 func (db *userRepository) Save(user *model.NewUser) (*model.User, error) {
@@ -61,14 +55,14 @@ func (db *userRepository) Save(user *model.NewUser) (*model.User, error) {
 		Following:      make([]string, 0),
 		FollowersCount: 0,
 		Followers:      make([]string, 0),
-		Chats:          make([]chat, 0),
+		Chats:          make([]userChat, 0),
 		Password: password{
 			Hash: GetHash(salt, user.Password),
 			Salt: salt,
 		},
 	})
 	if err != nil {
-		return nil, errors.New("User " + user.Nickname + " already exists")
+		return nil, errors.New("User '" + user.Nickname + "' already exists")
 	}
 	return &model.User{
 		Email:    user.Email,
@@ -121,12 +115,12 @@ func (db *userRepository) Follow(sender string, target string) (bool, error) {
 	var targetUser *UserSchema
 	err = result.Decode(&targetUser)
 	if err != nil {
-		return false, errors.New("User " + target + " doesn't exist")
+		return false, errors.New("No user name '" + target + "' found")
 	}
 
 	for _, name := range senderUser.Following {
 		if name == target {
-			return false, errors.New("You already follow " + target)
+			return false, errors.New("You already follow '" + target + "'")
 		}
 	}
 	senderUser.Following = append(senderUser.Following, target)
@@ -173,17 +167,21 @@ func (db *userRepository) Unfollow(sender string, target string) (bool, error) {
 	}
 
 	if !isFollowing {
-		return false, errors.New("You don't follow " + target)
+		return false, errors.New("You don't follow '" + target + "'")
 	}
 
 	result = db.collection.FindOne(context.TODO(), bson.M{"_id": target})
 	var targetUser *UserSchema
 	err = result.Decode(&targetUser)
 	if err != nil {
-		return false, errors.New("User " + target + " doesn't exist")
+		return false, errors.New("No user named '" + target + "' found")
 	}
 	targetUser.FollowersCount--
-	log.Fatal("TODO: ALTERAR FUNÇÃO")
+	for i, name := range targetUser.Followers {
+		if name == sender {
+			targetUser.Followers = append(targetUser.Followers[:i], targetUser.Followers[i+1:]...)
+		}
+	}
 	_, err = db.collection.UpdateOne(context.TODO(), bson.M{"_id": sender}, bson.M{
 		"$set": bson.M{"following": senderUser.Following},
 	})
@@ -192,7 +190,7 @@ func (db *userRepository) Unfollow(sender string, target string) (bool, error) {
 	}
 
 	_, err = db.collection.UpdateOne(context.TODO(), bson.M{"_id": target}, bson.M{
-		"$set": bson.M{"followers": targetUser.Followers},
+		"$set": bson.M{"followerscount": targetUser.FollowersCount, "followers": targetUser.Followers},
 	})
 	if err != nil {
 		return false, err

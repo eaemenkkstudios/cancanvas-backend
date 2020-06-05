@@ -63,6 +63,7 @@ type Auction {
 }
 
 type Message {
+  ChatID: ID!
   message: String!
   timestamp: Time!
   sender: String!
@@ -105,5 +106,5 @@ type Mutation {
 }
 
 type Subscription {
-  newChatMessage(id: ID!): Message!
+  newChatMessage: Message!
 }

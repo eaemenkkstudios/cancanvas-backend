@@ -6,7 +6,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/joho/godotenv"
+	//
+	_ "github.com/joho/godotenv/autoload"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -20,7 +21,6 @@ const (
 
 // NewDatabaseClient function
 func NewDatabaseClient() *mongo.Client {
-	err := godotenv.Load()
 	MONGODB := os.Getenv("MONGODB_URL")
 
 	clientOptions := options.Client().ApplyURI(MONGODB)

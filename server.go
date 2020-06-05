@@ -1,21 +1,16 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/eaemenkkstudios/cancanvas-backend/middleware"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
+	_ "github.com/joho/godotenv/autoload"
 )
 
 const defaultPort = "8080"
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		fmt.Println("No .env file found.")
-	}
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = defaultPort
@@ -24,6 +19,7 @@ func main() {
 	server := gin.Default()
 
 	server.GET("/", middleware.PlaygroundHandler())
+	server.GET("/query", middleware.GraphQLHandler())
 	server.POST("/query", middleware.GraphQLHandler())
 
 	server.Run(":" + port)

@@ -73,6 +73,7 @@ type ComplexityRoot struct {
 	}
 
 	Message struct {
+		ChatID    func(childComplexity int) int
 		Message   func(childComplexity int) int
 		Sender    func(childComplexity int) int
 		Timestamp func(childComplexity int) int
@@ -125,7 +126,7 @@ type ComplexityRoot struct {
 	}
 
 	Subscription struct {
-		NewChatMessage func(childComplexity int, id string) int
+		NewChatMessage func(childComplexity int) int
 	}
 
 	User struct {
@@ -150,7 +151,7 @@ type QueryResolver interface {
 	IsFollowing(ctx context.Context, nickname string) (bool, error)
 }
 type SubscriptionResolver interface {
-	NewChatMessage(ctx context.Context, id string) (<-chan *model.Message, error)
+	NewChatMessage(ctx context.Context) (<-chan *model.Message, error)
 }
 
 type executableSchema struct {
@@ -265,6 +266,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.CommentList.List(childComplexity), true
+
+	case "Message.ChatID":
+		if e.complexity.Message.ChatID == nil {
+			break
+		}
+
+		return e.complexity.Message.ChatID(childComplexity), true
 
 	case "Message.message":
 		if e.complexity.Message.Message == nil {
@@ -502,12 +510,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Subscription_newChatMessage_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Subscription.NewChatMessage(childComplexity, args["id"].(string)), true
+		return e.complexity.Subscription.NewChatMessage(childComplexity), true
 
 	case "User.artist":
 		if e.complexity.User.Artist == nil {
@@ -683,6 +686,7 @@ type Auction {
 }
 
 type Message {
+  ChatID: ID!
   message: String!
   timestamp: Time!
   sender: String!
@@ -725,7 +729,7 @@ type Mutation {
 }
 
 type Subscription {
-  newChatMessage(id: ID!): Message!
+  newChatMessage: Message!
 }`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -859,20 +863,6 @@ func (ec *executionContext) field_Query_user_args(ctx context.Context, rawArgs m
 		}
 	}
 	args["nickname"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Subscription_newChatMessage_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg0
 	return args, nil
 }
 
@@ -1386,6 +1376,40 @@ func (ec *executionContext) _CommentList_count(ctx context.Context, field graphq
 	res := resTmp.(int)
 	fc.Result = res
 	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Message_ChatID(ctx context.Context, field graphql.CollectedField, obj *model.Message) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Message",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ChatID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Message_message(ctx context.Context, field graphql.CollectedField, obj *model.Message) (ret graphql.Marshaler) {
@@ -2470,16 +2494,9 @@ func (ec *executionContext) _Subscription_newChatMessage(ctx context.Context, fi
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Subscription_newChatMessage_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return nil
-	}
-	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Subscription().NewChatMessage(rctx, args["id"].(string))
+		return ec.resolvers.Subscription().NewChatMessage(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3916,6 +3933,11 @@ func (ec *executionContext) _Message(ctx context.Context, sel ast.SelectionSet, 
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Message")
+		case "ChatID":
+			out.Values[i] = ec._Message_ChatID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "message":
 			out.Values[i] = ec._Message_message(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

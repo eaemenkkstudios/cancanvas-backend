@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	//
+	_ "github.com/joho/godotenv/autoload"
 )
 
 // JWTService interface
