@@ -206,7 +206,7 @@ func (db *chatRepository) addChatToUser(chatID string, sender string, receiver s
 
 // NewChatRepository function
 func NewChatRepository() ChatRepository {
-	client := NewDatabaseClient()
+	client := newDatabaseClient()
 	return &chatRepository{
 		client,
 	}

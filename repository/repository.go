@@ -17,10 +17,11 @@ const (
 	Database        = "cancanvas"
 	CollectionUsers = "users"
 	CollectionChats = "chats"
+	CollectionPosts = "posts"
 )
 
 // NewDatabaseClient function
-func NewDatabaseClient() *mongo.Client {
+func newDatabaseClient() *mongo.Client {
 	MONGODB := os.Getenv("MONGODB_URL")
 
 	clientOptions := options.Client().ApplyURI(MONGODB)

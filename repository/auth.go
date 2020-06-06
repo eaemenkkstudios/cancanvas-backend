@@ -57,7 +57,7 @@ func (db *authRespository) Login(username string, password string) (string, erro
 
 // NewAuthRepository function
 func NewAuthRepository() AuthRepository {
-	client := NewDatabaseClient()
+	client := newDatabaseClient()
 	return &authRespository{
 		client,
 	}

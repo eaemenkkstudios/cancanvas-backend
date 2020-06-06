@@ -51,6 +51,7 @@ type NewUser struct {
 }
 
 type Post struct {
+	ID          string        `json:"ID" bson:"_id,omitempty"`
 	Author      string        `json:"author"`
 	Description *string       `json:"description"`
 	Content     string        `json:"content"`

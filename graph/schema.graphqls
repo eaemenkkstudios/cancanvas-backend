@@ -39,6 +39,7 @@ type Comment {
 }
 
 type Post {
+  ID: ID!
   author: String!
   description: String
   content: String!
@@ -107,6 +108,7 @@ type Mutation {
   follow(nickname: String!): Boolean!
   unfollow(nickname: String!): Boolean!
   sendMessage(msg: String!, receiver: String!): Boolean!
+  createPost(content: Upload!, description: String): String!
 }
 
 type Subscription {

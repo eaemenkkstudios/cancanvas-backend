@@ -234,7 +234,7 @@ func (db *userRepository) IsFollowing(sender string, target string) bool {
 
 // NewUserRepository function
 func NewUserRepository() UserRepository {
-	client := NewDatabaseClient()
+	client := newDatabaseClient()
 	return &userRepository{
 		client:     client,
 		collection: client.Database(Database).Collection(CollectionUsers),
