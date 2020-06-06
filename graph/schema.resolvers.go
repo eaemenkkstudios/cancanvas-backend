@@ -47,7 +47,11 @@ func (r *mutationResolver) SendMessage(ctx context.Context, msg string, receiver
 }
 
 func (r *mutationResolver) CreatePost(ctx context.Context, content graphql.Upload, description *string) (string, error) {
-	return uploadRepository.CreatePost("teste", content, description)
+	author, err := utils.GetSenderFromTokenHTTP(ctx)
+	if err != nil {
+		return "", err
+	}
+	return uploadRepository.CreatePost(author, content, description)
 }
 
 func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
