@@ -43,11 +43,8 @@ func (db *uploadRepository) CreatePost(author string, content graphql.Upload, de
 			List:  make([]*model.Comment, 0),
 			Count: 0,
 		},
-		Content: filepath,
-		Reactions: &model.ReactionList{
-			List:  make([]*model.Reaction, 0),
-			Count: make([]*model.ReactionCount, 0),
-		},
+		Content:   filepath,
+		Likes:     0,
 		Timestamp: time.Now(),
 	})
 	if err != nil {

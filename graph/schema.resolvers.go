@@ -5,6 +5,7 @@ package graph
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/eaemenkkstudios/cancanvas-backend/graph/generated"
@@ -62,7 +63,7 @@ func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
 	return userRepository.FindAll()
 }
 
-func (r *queryResolver) User(ctx context.Context, nickname string) (*model.User, error) {
+func (r *queryResolver) Self(ctx context.Context) (*model.User, error) {
 	nickname, err := utils.GetSenderFromTokenHTTP(ctx)
 	if err != nil {
 		return nil, err
@@ -70,7 +71,11 @@ func (r *queryResolver) User(ctx context.Context, nickname string) (*model.User,
 	return userRepository.FindOne(nickname)
 }
 
-func (r *queryResolver) Self(ctx context.Context) (*model.User, error) {
+func (r *queryResolver) Feed(ctx context.Context) ([]*model.Post, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *queryResolver) User(ctx context.Context, nickname string) (*model.User, error) {
 	nickname, err := utils.GetSenderFromTokenHTTP(ctx)
 	if err != nil {
 		return nil, err

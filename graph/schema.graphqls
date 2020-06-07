@@ -5,27 +5,6 @@
 scalar Time
 scalar Upload
 
-enum Emote {
-  THUMBSUP,
-  CLAP,
-  HEART
-}
-
-type ReactionList {
-  list: [Reaction!]!
-  count: [ReactionCount!]!
-}
-
-type Reaction {
-  author: String!
-  emote: Emote!
-}
-
-type ReactionCount {
-  emote: Emote!
-  count: Int!
-}
-
 type CommentList {
   list: [Comment!]!
   count: Int!
@@ -34,7 +13,7 @@ type CommentList {
 type Comment {
   author: String!
   text: String!
-  reactions: ReactionList!
+  likes: Int!
   timestamp: Time!
 }
 
@@ -45,7 +24,7 @@ type Post {
   content: String!
   timestamp: Time!
   comments: CommentList!
-  reactions: ReactionList!
+  likes: Int!
 }
 
 type Proposal {
@@ -89,8 +68,9 @@ type User {
 
 type Query {
   users: [User!]!
-  user(nickname: String!): User!
   self: User!
+  feed: [Post!]!
+  user(nickname: String!): User!
   login(nickname: String!, password: String!): String!
   isFollowing(nickname: String!): Boolean!
 }

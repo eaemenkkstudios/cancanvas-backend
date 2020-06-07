@@ -62,7 +62,7 @@ type ComplexityRoot struct {
 
 	Comment struct {
 		Author    func(childComplexity int) int
-		Reactions func(childComplexity int) int
+		Likes     func(childComplexity int) int
 		Text      func(childComplexity int) int
 		Timestamp func(childComplexity int) int
 	}
@@ -93,7 +93,7 @@ type ComplexityRoot struct {
 		Content     func(childComplexity int) int
 		Description func(childComplexity int) int
 		ID          func(childComplexity int) int
-		Reactions   func(childComplexity int) int
+		Likes       func(childComplexity int) int
 		Timestamp   func(childComplexity int) int
 	}
 
@@ -105,26 +105,12 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
+		Feed        func(childComplexity int) int
 		IsFollowing func(childComplexity int, nickname string) int
 		Login       func(childComplexity int, nickname string, password string) int
 		Self        func(childComplexity int) int
 		User        func(childComplexity int, nickname string) int
 		Users       func(childComplexity int) int
-	}
-
-	Reaction struct {
-		Author func(childComplexity int) int
-		Emote  func(childComplexity int) int
-	}
-
-	ReactionCount struct {
-		Count func(childComplexity int) int
-		Emote func(childComplexity int) int
-	}
-
-	ReactionList struct {
-		Count func(childComplexity int) int
-		List  func(childComplexity int) int
 	}
 
 	Subscription struct {
@@ -152,8 +138,9 @@ type MutationResolver interface {
 }
 type QueryResolver interface {
 	Users(ctx context.Context) ([]*model.User, error)
-	User(ctx context.Context, nickname string) (*model.User, error)
 	Self(ctx context.Context) (*model.User, error)
+	Feed(ctx context.Context) ([]*model.Post, error)
+	User(ctx context.Context, nickname string) (*model.User, error)
 	Login(ctx context.Context, nickname string, password string) (string, error)
 	IsFollowing(ctx context.Context, nickname string) (bool, error)
 }
@@ -239,12 +226,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Comment.Author(childComplexity), true
 
-	case "Comment.reactions":
-		if e.complexity.Comment.Reactions == nil {
+	case "Comment.likes":
+		if e.complexity.Comment.Likes == nil {
 			break
 		}
 
-		return e.complexity.Comment.Reactions(childComplexity), true
+		return e.complexity.Comment.Likes(childComplexity), true
 
 	case "Comment.text":
 		if e.complexity.Comment.Text == nil {
@@ -397,12 +384,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Post.ID(childComplexity), true
 
-	case "Post.reactions":
-		if e.complexity.Post.Reactions == nil {
+	case "Post.likes":
+		if e.complexity.Post.Likes == nil {
 			break
 		}
 
-		return e.complexity.Post.Reactions(childComplexity), true
+		return e.complexity.Post.Likes(childComplexity), true
 
 	case "Post.timestamp":
 		if e.complexity.Post.Timestamp == nil {
@@ -438,6 +425,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Proposal.Timestamp(childComplexity), true
+
+	case "Query.feed":
+		if e.complexity.Query.Feed == nil {
+			break
+		}
+
+		return e.complexity.Query.Feed(childComplexity), true
 
 	case "Query.isFollowing":
 		if e.complexity.Query.IsFollowing == nil {
@@ -488,48 +482,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Users(childComplexity), true
-
-	case "Reaction.author":
-		if e.complexity.Reaction.Author == nil {
-			break
-		}
-
-		return e.complexity.Reaction.Author(childComplexity), true
-
-	case "Reaction.emote":
-		if e.complexity.Reaction.Emote == nil {
-			break
-		}
-
-		return e.complexity.Reaction.Emote(childComplexity), true
-
-	case "ReactionCount.count":
-		if e.complexity.ReactionCount.Count == nil {
-			break
-		}
-
-		return e.complexity.ReactionCount.Count(childComplexity), true
-
-	case "ReactionCount.emote":
-		if e.complexity.ReactionCount.Emote == nil {
-			break
-		}
-
-		return e.complexity.ReactionCount.Emote(childComplexity), true
-
-	case "ReactionList.count":
-		if e.complexity.ReactionList.Count == nil {
-			break
-		}
-
-		return e.complexity.ReactionList.Count(childComplexity), true
-
-	case "ReactionList.list":
-		if e.complexity.ReactionList.List == nil {
-			break
-		}
-
-		return e.complexity.ReactionList.List(childComplexity), true
 
 	case "Subscription.newChatMessage":
 		if e.complexity.Subscription.NewChatMessage == nil {
@@ -682,27 +634,6 @@ var sources = []*ast.Source{
 scalar Time
 scalar Upload
 
-enum Emote {
-  THUMBSUP,
-  CLAP,
-  HEART
-}
-
-type ReactionList {
-  list: [Reaction!]!
-  count: [ReactionCount!]!
-}
-
-type Reaction {
-  author: String!
-  emote: Emote!
-}
-
-type ReactionCount {
-  emote: Emote!
-  count: Int!
-}
-
 type CommentList {
   list: [Comment!]!
   count: Int!
@@ -711,7 +642,7 @@ type CommentList {
 type Comment {
   author: String!
   text: String!
-  reactions: ReactionList!
+  likes: Int!
   timestamp: Time!
 }
 
@@ -722,7 +653,7 @@ type Post {
   content: String!
   timestamp: Time!
   comments: CommentList!
-  reactions: ReactionList!
+  likes: Int!
 }
 
 type Proposal {
@@ -766,8 +697,9 @@ type User {
 
 type Query {
   users: [User!]!
-  user(nickname: String!): User!
   self: User!
+  feed: [Post!]!
+  user(nickname: String!): User!
   login(nickname: String!, password: String!): String!
   isFollowing(nickname: String!): Boolean!
 }
@@ -1324,7 +1256,7 @@ func (ec *executionContext) _Comment_text(ctx context.Context, field graphql.Col
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Comment_reactions(ctx context.Context, field graphql.CollectedField, obj *model.Comment) (ret graphql.Marshaler) {
+func (ec *executionContext) _Comment_likes(ctx context.Context, field graphql.CollectedField, obj *model.Comment) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1341,7 +1273,7 @@ func (ec *executionContext) _Comment_reactions(ctx context.Context, field graphq
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Reactions, nil
+		return obj.Likes, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1353,9 +1285,9 @@ func (ec *executionContext) _Comment_reactions(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.ReactionList)
+	res := resTmp.(int)
 	fc.Result = res
-	return ec.marshalNReactionList2ᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐReactionList(ctx, field.Selections, res)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Comment_timestamp(ctx context.Context, field graphql.CollectedField, obj *model.Comment) (ret graphql.Marshaler) {
@@ -2002,7 +1934,7 @@ func (ec *executionContext) _Post_comments(ctx context.Context, field graphql.Co
 	return ec.marshalNCommentList2ᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐCommentList(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Post_reactions(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
+func (ec *executionContext) _Post_likes(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2019,7 +1951,7 @@ func (ec *executionContext) _Post_reactions(ctx context.Context, field graphql.C
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Reactions, nil
+		return obj.Likes, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2031,9 +1963,9 @@ func (ec *executionContext) _Post_reactions(ctx context.Context, field graphql.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.ReactionList)
+	res := resTmp.(int)
 	fc.Result = res
-	return ec.marshalNReactionList2ᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐReactionList(ctx, field.Selections, res)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Proposal_issuer(ctx context.Context, field graphql.CollectedField, obj *model.Proposal) (ret graphql.Marshaler) {
@@ -2206,6 +2138,74 @@ func (ec *executionContext) _Query_users(ctx context.Context, field graphql.Coll
 	return ec.marshalNUser2ᚕᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐUserᚄ(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_self(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Self(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.User)
+	fc.Result = res
+	return ec.marshalNUser2ᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_feed(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Feed(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Post)
+	fc.Result = res
+	return ec.marshalNPost2ᚕᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐPostᚄ(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_user(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2231,40 +2231,6 @@ func (ec *executionContext) _Query_user(ctx context.Context, field graphql.Colle
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Query().User(rctx, args["nickname"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.User)
-	fc.Result = res
-	return ec.marshalNUser2ᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Query_self(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Query",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Self(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2430,210 +2396,6 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	res := resTmp.(*introspection.Schema)
 	fc.Result = res
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Reaction_author(ctx context.Context, field graphql.CollectedField, obj *model.Reaction) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Reaction",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Author, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Reaction_emote(ctx context.Context, field graphql.CollectedField, obj *model.Reaction) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Reaction",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Emote, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(model.Emote)
-	fc.Result = res
-	return ec.marshalNEmote2githubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐEmote(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ReactionCount_emote(ctx context.Context, field graphql.CollectedField, obj *model.ReactionCount) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "ReactionCount",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Emote, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(model.Emote)
-	fc.Result = res
-	return ec.marshalNEmote2githubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐEmote(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ReactionCount_count(ctx context.Context, field graphql.CollectedField, obj *model.ReactionCount) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "ReactionCount",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Count, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ReactionList_list(ctx context.Context, field graphql.CollectedField, obj *model.ReactionList) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "ReactionList",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.List, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*model.Reaction)
-	fc.Result = res
-	return ec.marshalNReaction2ᚕᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐReactionᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ReactionList_count(ctx context.Context, field graphql.CollectedField, obj *model.ReactionList) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "ReactionList",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Count, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*model.ReactionCount)
-	fc.Result = res
-	return ec.marshalNReactionCount2ᚕᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐReactionCountᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Subscription_newChatMessage(ctx context.Context, field graphql.CollectedField) (ret func() graphql.Marshaler) {
@@ -4162,8 +3924,8 @@ func (ec *executionContext) _Comment(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "reactions":
-			out.Values[i] = ec._Comment_reactions(ctx, field, obj)
+		case "likes":
+			out.Values[i] = ec._Comment_likes(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -4346,8 +4108,8 @@ func (ec *executionContext) _Post(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "reactions":
-			out.Values[i] = ec._Post_reactions(ctx, field, obj)
+		case "likes":
+			out.Values[i] = ec._Post_likes(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -4433,20 +4195,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
-		case "user":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_user(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
 		case "self":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -4456,6 +4204,34 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_self(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "feed":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_feed(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "user":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_user(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -4493,102 +4269,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Values[i] = ec._Query___type(ctx, field)
 		case "__schema":
 			out.Values[i] = ec._Query___schema(ctx, field)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var reactionImplementors = []string{"Reaction"}
-
-func (ec *executionContext) _Reaction(ctx context.Context, sel ast.SelectionSet, obj *model.Reaction) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, reactionImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("Reaction")
-		case "author":
-			out.Values[i] = ec._Reaction_author(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "emote":
-			out.Values[i] = ec._Reaction_emote(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var reactionCountImplementors = []string{"ReactionCount"}
-
-func (ec *executionContext) _ReactionCount(ctx context.Context, sel ast.SelectionSet, obj *model.ReactionCount) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, reactionCountImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("ReactionCount")
-		case "emote":
-			out.Values[i] = ec._ReactionCount_emote(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "count":
-			out.Values[i] = ec._ReactionCount_count(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var reactionListImplementors = []string{"ReactionList"}
-
-func (ec *executionContext) _ReactionList(ctx context.Context, sel ast.SelectionSet, obj *model.ReactionList) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, reactionListImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("ReactionList")
-		case "list":
-			out.Values[i] = ec._ReactionList_list(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "count":
-			out.Values[i] = ec._ReactionList_count(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5006,15 +4686,6 @@ func (ec *executionContext) marshalNCommentList2ᚖgithubᚗcomᚋeaemenkkstudio
 	return ec._CommentList(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNEmote2githubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐEmote(ctx context.Context, v interface{}) (model.Emote, error) {
-	var res model.Emote
-	return res, res.UnmarshalGQL(v)
-}
-
-func (ec *executionContext) marshalNEmote2githubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐEmote(ctx context.Context, sel ast.SelectionSet, v model.Emote) graphql.Marshaler {
-	return v
-}
-
 func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v interface{}) (float64, error) {
 	return graphql.UnmarshalFloat(v)
 }
@@ -5112,6 +4783,57 @@ func (ec *executionContext) unmarshalNNewUser2githubᚗcomᚋeaemenkkstudiosᚋc
 	return ec.unmarshalInputNewUser(ctx, v)
 }
 
+func (ec *executionContext) marshalNPost2githubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐPost(ctx context.Context, sel ast.SelectionSet, v model.Post) graphql.Marshaler {
+	return ec._Post(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNPost2ᚕᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐPostᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Post) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNPost2ᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐPost(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNPost2ᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐPost(ctx context.Context, sel ast.SelectionSet, v *model.Post) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Post(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNProposal2githubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐProposal(ctx context.Context, sel ast.SelectionSet, v model.Proposal) graphql.Marshaler {
 	return ec._Proposal(ctx, sel, &v)
 }
@@ -5161,122 +4883,6 @@ func (ec *executionContext) marshalNProposal2ᚖgithubᚗcomᚋeaemenkkstudios�
 		return graphql.Null
 	}
 	return ec._Proposal(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNReaction2githubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐReaction(ctx context.Context, sel ast.SelectionSet, v model.Reaction) graphql.Marshaler {
-	return ec._Reaction(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNReaction2ᚕᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐReactionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Reaction) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNReaction2ᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐReaction(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
-}
-
-func (ec *executionContext) marshalNReaction2ᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐReaction(ctx context.Context, sel ast.SelectionSet, v *model.Reaction) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._Reaction(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNReactionCount2githubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐReactionCount(ctx context.Context, sel ast.SelectionSet, v model.ReactionCount) graphql.Marshaler {
-	return ec._ReactionCount(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNReactionCount2ᚕᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐReactionCountᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ReactionCount) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNReactionCount2ᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐReactionCount(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
-}
-
-func (ec *executionContext) marshalNReactionCount2ᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐReactionCount(ctx context.Context, sel ast.SelectionSet, v *model.ReactionCount) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._ReactionCount(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNReactionList2githubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐReactionList(ctx context.Context, sel ast.SelectionSet, v model.ReactionList) graphql.Marshaler {
-	return ec._ReactionList(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNReactionList2ᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐReactionList(ctx context.Context, sel ast.SelectionSet, v *model.ReactionList) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._ReactionList(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {

@@ -3,9 +3,6 @@
 package model
 
 import (
-	"fmt"
-	"io"
-	"strconv"
 	"time"
 )
 
@@ -24,10 +21,10 @@ type Chat struct {
 }
 
 type Comment struct {
-	Author    string        `json:"author"`
-	Text      string        `json:"text"`
-	Reactions *ReactionList `json:"reactions"`
-	Timestamp time.Time     `json:"timestamp"`
+	Author    string    `json:"author"`
+	Text      string    `json:"text"`
+	Likes     int       `json:"likes"`
+	Timestamp time.Time `json:"timestamp"`
 }
 
 type CommentList struct {
@@ -51,13 +48,13 @@ type NewUser struct {
 }
 
 type Post struct {
-	ID          string        `json:"ID" bson:"_id,omitempty"`
-	Author      string        `json:"author"`
-	Description *string       `json:"description"`
-	Content     string        `json:"content"`
-	Timestamp   time.Time     `json:"timestamp"`
-	Comments    *CommentList  `json:"comments"`
-	Reactions   *ReactionList `json:"reactions"`
+	ID          string       `json:"ID" bson:"_id,omitempty"`
+	Author      string       `json:"author"`
+	Description *string      `json:"description"`
+	Content     string       `json:"content"`
+	Timestamp   time.Time    `json:"timestamp"`
+	Comments    *CommentList `json:"comments"`
+	Likes       int          `json:"likes"`
 }
 
 type Proposal struct {
@@ -65,21 +62,6 @@ type Proposal struct {
 	Price      float64   `json:"price"`
 	Timestamp  time.Time `json:"timestamp"`
 	Subscribed bool      `json:"subscribed"`
-}
-
-type Reaction struct {
-	Author string `json:"author"`
-	Emote  Emote  `json:"emote"`
-}
-
-type ReactionCount struct {
-	Emote Emote `json:"emote"`
-	Count int   `json:"count"`
-}
-
-type ReactionList struct {
-	List  []*Reaction      `json:"list"`
-	Count []*ReactionCount `json:"count"`
 }
 
 type User struct {
@@ -91,47 +73,4 @@ type User struct {
 	Followers      []string `json:"followers"`
 	FollowersCount int      `json:"followersCount"`
 	Following      []string `json:"following"`
-}
-
-type Emote string
-
-const (
-	EmoteThumbsup Emote = "THUMBSUP"
-	EmoteClap     Emote = "CLAP"
-	EmoteHeart    Emote = "HEART"
-)
-
-var AllEmote = []Emote{
-	EmoteThumbsup,
-	EmoteClap,
-	EmoteHeart,
-}
-
-func (e Emote) IsValid() bool {
-	switch e {
-	case EmoteThumbsup, EmoteClap, EmoteHeart:
-		return true
-	}
-	return false
-}
-
-func (e Emote) String() string {
-	return string(e)
-}
-
-func (e *Emote) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = Emote(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid Emote", str)
-	}
-	return nil
-}
-
-func (e Emote) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
 }
