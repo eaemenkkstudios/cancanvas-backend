@@ -13,6 +13,7 @@ import (
 // FeedRepository interface
 type FeedRepository interface {
 	GetFeed(nickname string, page *int) ([]*model.Post, error)
+	GetTrending(page *int) ([]*model.Post, error)
 }
 
 type feedRepository struct {
@@ -34,13 +35,42 @@ func (db *feedRepository) GetFeed(nickname string, page *int) ([]*model.Post, er
 		return nil, errors.New("Unexpected Error")
 	}
 	collection = db.client.Database(Database).Collection(CollectionPosts)
-	opts := options.Find().SetSkip(int64(PageSize * (*page - 1))).SetLimit(PageSize)
-	cursor, err := collection.Find(context.TODO(), bson.M{"author": bson.M{"$in": u.Following}}, opts)
+	opts := options.Find().
+		SetSkip(int64(PageSize * (*page - 1))).
+		SetLimit(PageSize).
+		SetSort(bson.M{"timestamp": -1})
+	ctx := context.TODO()
+	cursor, err := collection.Find(ctx, bson.M{"author": bson.M{"$in": u.Following}}, opts)
 	if err != nil {
 		return nil, errors.New("Could not load feed")
 	}
 	var posts = make([]*model.Post, 0)
-	for cursor.Next(context.TODO()) {
+	defer cursor.Close(ctx)
+	for cursor.Next(ctx) {
+		var p model.Post
+		err = cursor.Decode(&p)
+		posts = append(posts, &p)
+	}
+	return posts, err
+}
+
+func (db *feedRepository) GetTrending(page *int) ([]*model.Post, error) {
+	if page == nil || *page < 1 {
+		*page = 1
+	}
+	collection := db.client.Database(Database).Collection(CollectionPosts)
+	opts := options.Find().
+		SetSkip(int64(PageSize * (*page - 1))).
+		SetLimit(PageSize).
+		SetSort(bson.D{{Key: "likes", Value: -1}, {Key: "timestamp", Value: -1}})
+	ctx := context.TODO()
+	cursor, err := collection.Find(ctx, bson.M{}, opts)
+	if err != nil {
+		return nil, errors.New("Could not load feed")
+	}
+	var posts = make([]*model.Post, 0)
+	defer cursor.Close(ctx)
+	for cursor.Next(ctx) {
 		var p model.Post
 		err = cursor.Decode(&p)
 		posts = append(posts, &p)

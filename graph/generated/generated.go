@@ -109,6 +109,7 @@ type ComplexityRoot struct {
 		IsFollowing func(childComplexity int, nickname string) int
 		Login       func(childComplexity int, nickname string, password string) int
 		Self        func(childComplexity int) int
+		Trending    func(childComplexity int, page *int) int
 		User        func(childComplexity int, nickname string) int
 		Users       func(childComplexity int) int
 	}
@@ -140,6 +141,7 @@ type QueryResolver interface {
 	Users(ctx context.Context) ([]*model.User, error)
 	Self(ctx context.Context) (*model.User, error)
 	Feed(ctx context.Context, page *int) ([]*model.Post, error)
+	Trending(ctx context.Context, page *int) ([]*model.Post, error)
 	User(ctx context.Context, nickname string) (*model.User, error)
 	Login(ctx context.Context, nickname string, password string) (string, error)
 	IsFollowing(ctx context.Context, nickname string) (bool, error)
@@ -469,6 +471,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Self(childComplexity), true
 
+	case "Query.trending":
+		if e.complexity.Query.Trending == nil {
+			break
+		}
+
+		args, err := ec.field_Query_trending_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Trending(childComplexity, args["page"].(*int)), true
+
 	case "Query.user":
 		if e.complexity.Query.User == nil {
 			break
@@ -704,6 +718,7 @@ type Query {
   users: [User!]!
   self: User!
   feed(page: Int = 1): [Post!]!
+  trending(page: Int = 1): [Post!]!
   user(nickname: String!): User!
   login(nickname: String!, password: String!): String!
   isFollowing(nickname: String!): Boolean!
@@ -882,6 +897,20 @@ func (ec *executionContext) field_Query_login_args(ctx context.Context, rawArgs 
 		}
 	}
 	args["password"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_trending_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *int
+	if tmp, ok := rawArgs["page"]; ok {
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["page"] = arg0
 	return args, nil
 }
 
@@ -2216,6 +2245,47 @@ func (ec *executionContext) _Query_feed(ctx context.Context, field graphql.Colle
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Query().Feed(rctx, args["page"].(*int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Post)
+	fc.Result = res
+	return ec.marshalNPost2ᚕᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐPostᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_trending(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_trending_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Trending(rctx, args["page"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4244,6 +4314,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_feed(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "trending":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_trending(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}

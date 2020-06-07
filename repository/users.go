@@ -92,10 +92,11 @@ func (db *userRepository) FindOne(nickname string) (*model.User, error) {
 }
 
 func (db *userRepository) FindAll() ([]*model.User, error) {
-	cursor, err := db.collection.Find(context.TODO(), bson.D{})
-	defer cursor.Close(context.TODO())
+	ctx := context.TODO()
+	cursor, err := db.collection.Find(ctx, bson.D{})
+	defer cursor.Close(ctx)
 	var users []*model.User
-	for cursor.Next(context.TODO()) {
+	for cursor.Next(ctx) {
 		var u *UserSchema
 		err = cursor.Decode(&u)
 		users = append(users, &model.User{
