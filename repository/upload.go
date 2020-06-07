@@ -24,7 +24,7 @@ type uploadRepository struct {
 }
 
 func (db *uploadRepository) CreatePost(author string, content graphql.Upload, description *string) (string, error) {
-	filepath, err := db.awsSession.UploadFile(content)
+	filepath, err := db.awsSession.UploadFile(content, "/post")
 	if err != nil {
 		return "", errors.New("Could not upload file")
 	}

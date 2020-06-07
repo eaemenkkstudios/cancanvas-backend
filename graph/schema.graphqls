@@ -69,7 +69,7 @@ type User {
 type Query {
   users: [User!]!
   self: User!
-  feed: [Post!]!
+  feed(page: Int = 1): [Post!]!
   user(nickname: String!): User!
   login(nickname: String!, password: String!): String!
   isFollowing(nickname: String!): Boolean!

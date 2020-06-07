@@ -5,7 +5,6 @@ package graph
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/eaemenkkstudios/cancanvas-backend/graph/generated"
@@ -18,6 +17,7 @@ var userRepository = repository.NewUserRepository()
 var authRepository = repository.NewAuthRepository()
 var chatRepository = repository.NewChatRepository()
 var uploadRepository = repository.NewUploadRepository()
+var feedRepository = repository.NewFeedRepository()
 
 func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) (*model.User, error) {
 	return userRepository.Save(&input)
@@ -71,8 +71,12 @@ func (r *queryResolver) Self(ctx context.Context) (*model.User, error) {
 	return userRepository.FindOne(nickname)
 }
 
-func (r *queryResolver) Feed(ctx context.Context) ([]*model.Post, error) {
-	panic(fmt.Errorf("not implemented"))
+func (r *queryResolver) Feed(ctx context.Context, page *int) ([]*model.Post, error) {
+	nickname, err := utils.GetSenderFromTokenHTTP(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return feedRepository.GetFeed(nickname, page)
 }
 
 func (r *queryResolver) User(ctx context.Context, nickname string) (*model.User, error) {

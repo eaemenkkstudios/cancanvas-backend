@@ -15,7 +15,7 @@ import (
 
 // AwsService interface
 type AwsService interface {
-	UploadFile(upload graphql.Upload) (string, error)
+	UploadFile(upload graphql.Upload, prefix string) (string, error)
 }
 
 type awsService struct {
@@ -27,10 +27,13 @@ type awsService struct {
 	urlPrefix  string
 }
 
-func (a *awsService) UploadFile(upload graphql.Upload) (string, error) {
+func (a *awsService) UploadFile(upload graphql.Upload, prefix string) (string, error) {
+	if prefix != "" {
+		prefix = prefix + "/"
+	}
 	buffer := make([]byte, upload.Size)
 	upload.File.Read(buffer)
-	var tempFileName string = primitive.NewObjectID().Hex() + "-" + upload.Filename
+	var tempFileName string = prefix + primitive.NewObjectID().Hex() + "-" + upload.Filename
 	_, err := s3.New(a.session).PutObject(&s3.PutObjectInput{
 		Bucket:               aws.String(a.bucketName),
 		Key:                  aws.String(tempFileName),
