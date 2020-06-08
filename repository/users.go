@@ -20,7 +20,7 @@ type UserRepository interface {
 }
 
 type userRepository struct {
-	client     *mongo.Client
+	client     *mongo.Database
 	collection *mongo.Collection
 }
 
@@ -34,7 +34,6 @@ type UserSchema struct {
 	Nickname       string     `json:"nickname" bson:"_id"`
 	Name           string     `json:"name"`
 	Email          string     `json:"email"`
-	Artist         bool       `json:"artist"`
 	Gallery        []string   `json:"gallery"`
 	Followers      []string   `json:"followers"`
 	FollowersCount int        `json:"followerscount"`
@@ -44,12 +43,10 @@ type UserSchema struct {
 }
 
 func (db *userRepository) Save(user *model.NewUser) (*model.User, error) {
-	collection := db.client.Database(Database).Collection(CollectionUsers)
 	salt := GetSalt()
-	_, err := collection.InsertOne(context.TODO(), &UserSchema{
+	_, err := db.collection.InsertOne(context.TODO(), &UserSchema{
 		Email:          user.Email,
 		Nickname:       user.Nickname,
-		Artist:         user.Artist,
 		Name:           user.Name,
 		Gallery:        make([]string, 0),
 		Following:      make([]string, 0),
@@ -65,10 +62,13 @@ func (db *userRepository) Save(user *model.NewUser) (*model.User, error) {
 		return nil, errors.New("User '" + user.Nickname + "' already exists")
 	}
 	return &model.User{
-		Email:    user.Email,
-		Artist:   user.Artist,
-		Name:     user.Name,
-		Nickname: user.Nickname,
+		Email:          user.Email,
+		Name:           user.Name,
+		Nickname:       user.Nickname,
+		Followers:      make([]string, 0),
+		FollowersCount: 0,
+		Following:      make([]string, 0),
+		Galery:         make([]string, 0),
 	}, nil
 }
 
@@ -82,7 +82,6 @@ func (db *userRepository) FindOne(nickname string) (*model.User, error) {
 	return &model.User{
 		Email:          user.Email,
 		Name:           user.Name,
-		Artist:         user.Artist,
 		Nickname:       user.Nickname,
 		Followers:      user.Followers,
 		FollowersCount: user.FollowersCount,
@@ -103,7 +102,6 @@ func (db *userRepository) FindAll() ([]*model.User, error) {
 			Nickname:       u.Nickname,
 			Name:           u.Name,
 			Email:          u.Email,
-			Artist:         u.Artist,
 			Followers:      u.Followers,
 			FollowersCount: u.FollowersCount,
 			Following:      u.Following,
@@ -238,6 +236,6 @@ func NewUserRepository() UserRepository {
 	client := newDatabaseClient()
 	return &userRepository{
 		client:     client,
-		collection: client.Database(Database).Collection(CollectionUsers),
+		collection: client.Collection(CollectionUsers),
 	}
 }

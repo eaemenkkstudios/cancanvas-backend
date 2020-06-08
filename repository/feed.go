@@ -17,7 +17,7 @@ type FeedRepository interface {
 }
 
 type feedRepository struct {
-	client *mongo.Client
+	client *mongo.Database
 }
 
 // PageSize constant
@@ -27,14 +27,14 @@ func (db *feedRepository) GetFeed(nickname string, page *int) ([]*model.Post, er
 	if page == nil || *page < 1 {
 		*page = 1
 	}
-	collection := db.client.Database(Database).Collection(CollectionUsers)
+	collection := db.client.Collection(CollectionUsers)
 	result := collection.FindOne(context.TODO(), bson.M{"_id": nickname})
 	var u UserSchema
 	err := result.Decode(&u)
 	if err != nil {
 		return nil, errors.New("Unexpected Error")
 	}
-	collection = db.client.Database(Database).Collection(CollectionPosts)
+	collection = db.client.Collection(CollectionPosts)
 	opts := options.Find().
 		SetSkip(int64(PageSize * (*page - 1))).
 		SetLimit(PageSize).
@@ -58,7 +58,7 @@ func (db *feedRepository) GetTrending(page *int) ([]*model.Post, error) {
 	if page == nil || *page < 1 {
 		*page = 1
 	}
-	collection := db.client.Database(Database).Collection(CollectionPosts)
+	collection := db.client.Collection(CollectionPosts)
 	opts := options.Find().
 		SetSkip(int64(PageSize * (*page - 1))).
 		SetLimit(PageSize).

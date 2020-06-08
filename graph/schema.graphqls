@@ -11,20 +11,23 @@ type CommentList {
 }
 
 type Comment {
+  id: ID!
   author: String!
   text: String!
-  likes: Int!
+  likeCount: Int!
+  likes: [String!]!
   timestamp: Time!
 }
 
 type Post {
-  ID: ID!
+  id: ID!
   author: String!
   description: String
   content: String!
   timestamp: Time!
   comments: CommentList!
-  likes: Int!
+  likeCount: Int!
+  likes: [String!]!
 }
 
 type Proposal {
@@ -50,7 +53,7 @@ type Message {
 }
 
 type Chat {
-  ID: ID!
+  id: ID!
   users: [String!]!
   messages: [Message!]!
 }
@@ -59,7 +62,6 @@ type User {
   nickname: String!
   name: String!
   email: String!
-  artist: Boolean!
   galery: [String!]!
   followers: [String!]!
   followersCount: Int!
@@ -81,7 +83,6 @@ input NewUser {
   name: String!
   email: String!
   password: String!
-  artist: Boolean!
 }
 
 type Mutation {
@@ -90,6 +91,11 @@ type Mutation {
   unfollow(nickname: String!): Boolean!
   sendMessage(msg: String!, receiver: String!): Boolean!
   createPost(content: Upload!, description: String): String!
+  deletePost(postID: String!): Boolean!
+  likeComment(postID: String!, commentID: String!): Boolean!
+  likePost(postID: String!): Boolean!
+  commentOnPost(postID: String!, message: String!): String!
+  deleteComment(postID: String!, commentID: String!): Boolean!
 }
 
 type Subscription {

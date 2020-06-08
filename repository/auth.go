@@ -17,7 +17,7 @@ type AuthRepository interface {
 }
 
 type authRespository struct {
-	client *mongo.Client
+	client *mongo.Database
 }
 
 func randSeq(n int) string {
@@ -41,7 +41,7 @@ func GetHash(salt string, password string) string {
 }
 
 func (db *authRespository) Login(username string, password string) (string, error) {
-	collection := db.client.Database(Database).Collection(CollectionUsers)
+	collection := db.client.Collection(CollectionUsers)
 	result := collection.FindOne(context.TODO(), bson.M{"_id": username})
 	var user *UserSchema
 	err := result.Decode(&user)

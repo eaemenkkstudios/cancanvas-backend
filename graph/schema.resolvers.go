@@ -16,7 +16,7 @@ import (
 var userRepository = repository.NewUserRepository()
 var authRepository = repository.NewAuthRepository()
 var chatRepository = repository.NewChatRepository()
-var uploadRepository = repository.NewUploadRepository()
+var postRepository = repository.NewPostRepository()
 var feedRepository = repository.NewFeedRepository()
 
 func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) (*model.User, error) {
@@ -52,7 +52,47 @@ func (r *mutationResolver) CreatePost(ctx context.Context, content graphql.Uploa
 	if err != nil {
 		return "", err
 	}
-	return uploadRepository.CreatePost(author, content, description)
+	return postRepository.CreatePost(author, content, description)
+}
+
+func (r *mutationResolver) DeletePost(ctx context.Context, postID string) (bool, error) {
+	sender, err := utils.GetSenderFromTokenHTTP(ctx)
+	if err != nil {
+		return false, err
+	}
+	return postRepository.DeletePost(sender, postID)
+}
+
+func (r *mutationResolver) LikeComment(ctx context.Context, postID string, commentID string) (bool, error) {
+	sender, err := utils.GetSenderFromTokenHTTP(ctx)
+	if err != nil {
+		return false, err
+	}
+	return postRepository.LikeComment(sender, postID, commentID)
+}
+
+func (r *mutationResolver) LikePost(ctx context.Context, postID string) (bool, error) {
+	sender, err := utils.GetSenderFromTokenHTTP(ctx)
+	if err != nil {
+		return false, err
+	}
+	return postRepository.LikePost(sender, postID)
+}
+
+func (r *mutationResolver) CommentOnPost(ctx context.Context, postID string, message string) (string, error) {
+	sender, err := utils.GetSenderFromTokenHTTP(ctx)
+	if err != nil {
+		return "", err
+	}
+	return postRepository.CommentOnPost(sender, postID, message)
+}
+
+func (r *mutationResolver) DeleteComment(ctx context.Context, postID string, commentID string) (bool, error) {
+	sender, err := utils.GetSenderFromTokenHTTP(ctx)
+	if err != nil {
+		return false, err
+	}
+	return postRepository.DeleteComment(sender, postID, commentID)
 }
 
 func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {

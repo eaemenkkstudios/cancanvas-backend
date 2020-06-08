@@ -16,6 +16,8 @@ import (
 // AwsService interface
 type AwsService interface {
 	UploadFile(upload graphql.Upload, prefix string) (string, error)
+	DeleteFile(key string) (bool, error)
+	GetURLPrefix() string
 }
 
 type awsService struct {
@@ -48,6 +50,21 @@ func (a *awsService) UploadFile(upload graphql.Upload, prefix string) (string, e
 		return "", err
 	}
 	return a.urlPrefix + tempFileName, nil
+}
+
+func (a *awsService) DeleteFile(key string) (bool, error) {
+	_, err := s3.New(a.session).DeleteObject(&s3.DeleteObjectInput{
+		Bucket: aws.String(a.bucketName),
+		Key:    aws.String(key),
+	})
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+func (a *awsService) GetURLPrefix() string {
+	return a.urlPrefix
 }
 
 // NewAwsService function

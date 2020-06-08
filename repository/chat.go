@@ -22,7 +22,7 @@ type ChatRepository interface {
 }
 
 type chatRepository struct {
-	client *mongo.Client
+	client *mongo.Database
 }
 
 // Chat struct
@@ -48,7 +48,7 @@ func (db *chatRepository) SendMessage(sender string, msg string, receiver string
 	if sender == receiver {
 		return false, errors.New("You can't send a message to yourself")
 	}
-	collection := db.client.Database(Database).Collection(CollectionUsers)
+	collection := db.client.Collection(CollectionUsers)
 	result := collection.FindOne(context.TODO(), bson.M{"_id": sender})
 	var u UserSchema
 	err := result.Decode(&u)
@@ -98,7 +98,7 @@ func (db *chatRepository) SendMessage(sender string, msg string, receiver string
 }
 
 func (db *chatRepository) NewChatMessage(sender string) (<-chan *model.Message, error) {
-	collection := db.client.Database(Database).Collection(CollectionUsers)
+	collection := db.client.Collection(CollectionUsers)
 	result := collection.FindOne(context.TODO(), bson.M{"_id": sender})
 	var user UserSchema
 	err := result.Decode(&user)
@@ -111,7 +111,7 @@ func (db *chatRepository) NewChatMessage(sender string) (<-chan *model.Message, 
 		chatIDs = append(chatIDs, id)
 	}
 
-	collection = db.client.Database(Database).Collection(CollectionChats)
+	collection = db.client.Collection(CollectionChats)
 	ctx := context.TODO()
 	stream, err := collection.Watch(ctx, mongo.Pipeline{bson.D{
 		{
@@ -158,7 +158,7 @@ func (db *chatRepository) NewChatMessage(sender string) (<-chan *model.Message, 
 }
 
 func (db *chatRepository) createChat(sender string, receiver string) (string, error) {
-	collection := db.client.Database(Database).Collection(CollectionChats)
+	collection := db.client.Collection(CollectionChats)
 	result, err := collection.InsertOne(context.TODO(), &Chat{
 		Messages: make([]Message, 0),
 		Users:    []string{sender, receiver},
@@ -170,7 +170,7 @@ func (db *chatRepository) createChat(sender string, receiver string) (string, er
 }
 
 func (db *chatRepository) addMessageToChat(chatID string, message string, sender string) error {
-	collection := db.client.Database(Database).Collection(CollectionChats)
+	collection := db.client.Collection(CollectionChats)
 	msg := &Message{
 		Message:   message,
 		Sender:    sender,
@@ -190,7 +190,7 @@ func (db *chatRepository) addMessageToChat(chatID string, message string, sender
 }
 
 func (db *chatRepository) addChatToUser(chatID string, sender string, receiver string) error {
-	collection := db.client.Database(Database).Collection(CollectionUsers)
+	collection := db.client.Collection(CollectionUsers)
 	chat := &userChat{
 		ChatID:   chatID,
 		Receiver: receiver,

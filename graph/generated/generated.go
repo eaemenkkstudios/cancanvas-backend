@@ -62,6 +62,8 @@ type ComplexityRoot struct {
 
 	Comment struct {
 		Author    func(childComplexity int) int
+		ID        func(childComplexity int) int
+		LikeCount func(childComplexity int) int
 		Likes     func(childComplexity int) int
 		Text      func(childComplexity int) int
 		Timestamp func(childComplexity int) int
@@ -80,11 +82,16 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreatePost  func(childComplexity int, content graphql.Upload, description *string) int
-		CreateUser  func(childComplexity int, input model.NewUser) int
-		Follow      func(childComplexity int, nickname string) int
-		SendMessage func(childComplexity int, msg string, receiver string) int
-		Unfollow    func(childComplexity int, nickname string) int
+		CommentOnPost func(childComplexity int, postID string, message string) int
+		CreatePost    func(childComplexity int, content graphql.Upload, description *string) int
+		CreateUser    func(childComplexity int, input model.NewUser) int
+		DeleteComment func(childComplexity int, postID string, commentID string) int
+		DeletePost    func(childComplexity int, postID string) int
+		Follow        func(childComplexity int, nickname string) int
+		LikeComment   func(childComplexity int, postID string, commentID string) int
+		LikePost      func(childComplexity int, postID string) int
+		SendMessage   func(childComplexity int, msg string, receiver string) int
+		Unfollow      func(childComplexity int, nickname string) int
 	}
 
 	Post struct {
@@ -93,6 +100,7 @@ type ComplexityRoot struct {
 		Content     func(childComplexity int) int
 		Description func(childComplexity int) int
 		ID          func(childComplexity int) int
+		LikeCount   func(childComplexity int) int
 		Likes       func(childComplexity int) int
 		Timestamp   func(childComplexity int) int
 	}
@@ -119,7 +127,6 @@ type ComplexityRoot struct {
 	}
 
 	User struct {
-		Artist         func(childComplexity int) int
 		Email          func(childComplexity int) int
 		Followers      func(childComplexity int) int
 		FollowersCount func(childComplexity int) int
@@ -136,6 +143,11 @@ type MutationResolver interface {
 	Unfollow(ctx context.Context, nickname string) (bool, error)
 	SendMessage(ctx context.Context, msg string, receiver string) (bool, error)
 	CreatePost(ctx context.Context, content graphql.Upload, description *string) (string, error)
+	DeletePost(ctx context.Context, postID string) (bool, error)
+	LikeComment(ctx context.Context, postID string, commentID string) (bool, error)
+	LikePost(ctx context.Context, postID string) (bool, error)
+	CommentOnPost(ctx context.Context, postID string, message string) (string, error)
+	DeleteComment(ctx context.Context, postID string, commentID string) (bool, error)
 }
 type QueryResolver interface {
 	Users(ctx context.Context) ([]*model.User, error)
@@ -200,7 +212,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Auction.Timestamp(childComplexity), true
 
-	case "Chat.ID":
+	case "Chat.id":
 		if e.complexity.Chat.ID == nil {
 			break
 		}
@@ -227,6 +239,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Comment.Author(childComplexity), true
+
+	case "Comment.id":
+		if e.complexity.Comment.ID == nil {
+			break
+		}
+
+		return e.complexity.Comment.ID(childComplexity), true
+
+	case "Comment.likeCount":
+		if e.complexity.Comment.LikeCount == nil {
+			break
+		}
+
+		return e.complexity.Comment.LikeCount(childComplexity), true
 
 	case "Comment.likes":
 		if e.complexity.Comment.Likes == nil {
@@ -291,6 +317,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Message.Timestamp(childComplexity), true
 
+	case "Mutation.commentOnPost":
+		if e.complexity.Mutation.CommentOnPost == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_commentOnPost_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CommentOnPost(childComplexity, args["postID"].(string), args["message"].(string)), true
+
 	case "Mutation.createPost":
 		if e.complexity.Mutation.CreatePost == nil {
 			break
@@ -315,6 +353,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.CreateUser(childComplexity, args["input"].(model.NewUser)), true
 
+	case "Mutation.deleteComment":
+		if e.complexity.Mutation.DeleteComment == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteComment_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteComment(childComplexity, args["postID"].(string), args["commentID"].(string)), true
+
+	case "Mutation.deletePost":
+		if e.complexity.Mutation.DeletePost == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deletePost_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeletePost(childComplexity, args["postID"].(string)), true
+
 	case "Mutation.follow":
 		if e.complexity.Mutation.Follow == nil {
 			break
@@ -326,6 +388,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.Follow(childComplexity, args["nickname"].(string)), true
+
+	case "Mutation.likeComment":
+		if e.complexity.Mutation.LikeComment == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_likeComment_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.LikeComment(childComplexity, args["postID"].(string), args["commentID"].(string)), true
+
+	case "Mutation.likePost":
+		if e.complexity.Mutation.LikePost == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_likePost_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.LikePost(childComplexity, args["postID"].(string)), true
 
 	case "Mutation.sendMessage":
 		if e.complexity.Mutation.SendMessage == nil {
@@ -379,12 +465,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Post.Description(childComplexity), true
 
-	case "Post.ID":
+	case "Post.id":
 		if e.complexity.Post.ID == nil {
 			break
 		}
 
 		return e.complexity.Post.ID(childComplexity), true
+
+	case "Post.likeCount":
+		if e.complexity.Post.LikeCount == nil {
+			break
+		}
+
+		return e.complexity.Post.LikeCount(childComplexity), true
 
 	case "Post.likes":
 		if e.complexity.Post.Likes == nil {
@@ -508,13 +601,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Subscription.NewChatMessage(childComplexity), true
-
-	case "User.artist":
-		if e.complexity.User.Artist == nil {
-			break
-		}
-
-		return e.complexity.User.Artist(childComplexity), true
 
 	case "User.email":
 		if e.complexity.User.Email == nil {
@@ -659,20 +745,23 @@ type CommentList {
 }
 
 type Comment {
+  id: ID!
   author: String!
   text: String!
-  likes: Int!
+  likeCount: Int!
+  likes: [String!]!
   timestamp: Time!
 }
 
 type Post {
-  ID: ID!
+  id: ID!
   author: String!
   description: String
   content: String!
   timestamp: Time!
   comments: CommentList!
-  likes: Int!
+  likeCount: Int!
+  likes: [String!]!
 }
 
 type Proposal {
@@ -698,7 +787,7 @@ type Message {
 }
 
 type Chat {
-  ID: ID!
+  id: ID!
   users: [String!]!
   messages: [Message!]!
 }
@@ -707,7 +796,6 @@ type User {
   nickname: String!
   name: String!
   email: String!
-  artist: Boolean!
   galery: [String!]!
   followers: [String!]!
   followersCount: Int!
@@ -729,7 +817,6 @@ input NewUser {
   name: String!
   email: String!
   password: String!
-  artist: Boolean!
 }
 
 type Mutation {
@@ -738,6 +825,11 @@ type Mutation {
   unfollow(nickname: String!): Boolean!
   sendMessage(msg: String!, receiver: String!): Boolean!
   createPost(content: Upload!, description: String): String!
+  deletePost(postID: String!): Boolean!
+  likeComment(postID: String!, commentID: String!): Boolean!
+  likePost(postID: String!): Boolean!
+  commentOnPost(postID: String!, message: String!): String!
+  deleteComment(postID: String!, commentID: String!): Boolean!
 }
 
 type Subscription {
@@ -749,6 +841,28 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) field_Mutation_commentOnPost_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["postID"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["postID"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["message"]; ok {
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["message"] = arg1
+	return args, nil
+}
 
 func (ec *executionContext) field_Mutation_createPost_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
@@ -786,6 +900,42 @@ func (ec *executionContext) field_Mutation_createUser_args(ctx context.Context, 
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_deleteComment_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["postID"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["postID"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["commentID"]; ok {
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["commentID"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deletePost_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["postID"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["postID"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_follow_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -797,6 +947,42 @@ func (ec *executionContext) field_Mutation_follow_args(ctx context.Context, rawA
 		}
 	}
 	args["nickname"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_likeComment_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["postID"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["postID"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["commentID"]; ok {
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["commentID"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_likePost_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["postID"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["postID"] = arg0
 	return args, nil
 }
 
@@ -1134,7 +1320,7 @@ func (ec *executionContext) _Auction_deadline(ctx context.Context, field graphql
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Chat_ID(ctx context.Context, field graphql.CollectedField, obj *model.Chat) (ret graphql.Marshaler) {
+func (ec *executionContext) _Chat_id(ctx context.Context, field graphql.CollectedField, obj *model.Chat) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1236,6 +1422,40 @@ func (ec *executionContext) _Chat_messages(ctx context.Context, field graphql.Co
 	return ec.marshalNMessage2ᚕᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐMessageᚄ(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Comment_id(ctx context.Context, field graphql.CollectedField, obj *model.Comment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Comment",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Comment_author(ctx context.Context, field graphql.CollectedField, obj *model.Comment) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -1304,6 +1524,40 @@ func (ec *executionContext) _Comment_text(ctx context.Context, field graphql.Col
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Comment_likeCount(ctx context.Context, field graphql.CollectedField, obj *model.Comment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Comment",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LikeCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Comment_likes(ctx context.Context, field graphql.CollectedField, obj *model.Comment) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -1333,9 +1587,9 @@ func (ec *executionContext) _Comment_likes(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.([]string)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Comment_timestamp(ctx context.Context, field graphql.CollectedField, obj *model.Comment) (ret graphql.Marshaler) {
@@ -1781,7 +2035,212 @@ func (ec *executionContext) _Mutation_createPost(ctx context.Context, field grap
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Post_ID(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_deletePost(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_deletePost_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeletePost(rctx, args["postID"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_likeComment(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_likeComment_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().LikeComment(rctx, args["postID"].(string), args["commentID"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_likePost(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_likePost_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().LikePost(rctx, args["postID"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_commentOnPost(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_commentOnPost_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CommentOnPost(rctx, args["postID"].(string), args["message"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_deleteComment(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_deleteComment_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteComment(rctx, args["postID"].(string), args["commentID"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Post_id(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1982,6 +2441,40 @@ func (ec *executionContext) _Post_comments(ctx context.Context, field graphql.Co
 	return ec.marshalNCommentList2ᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐCommentList(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Post_likeCount(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Post",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LikeCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Post_likes(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2011,9 +2504,9 @@ func (ec *executionContext) _Post_likes(ctx context.Context, field graphql.Colle
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.([]string)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Proposal_issuer(ctx context.Context, field graphql.CollectedField, obj *model.Proposal) (ret graphql.Marshaler) {
@@ -2638,40 +3131,6 @@ func (ec *executionContext) _User_email(ctx context.Context, field graphql.Colle
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _User_artist(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "User",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Artist, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _User_galery(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
@@ -3895,12 +4354,6 @@ func (ec *executionContext) unmarshalInputNewUser(ctx context.Context, obj inter
 			if err != nil {
 				return it, err
 			}
-		case "artist":
-			var err error
-			it.Artist, err = ec.unmarshalNBoolean2bool(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		}
 	}
 
@@ -3973,8 +4426,8 @@ func (ec *executionContext) _Chat(ctx context.Context, sel ast.SelectionSet, obj
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Chat")
-		case "ID":
-			out.Values[i] = ec._Chat_ID(ctx, field, obj)
+		case "id":
+			out.Values[i] = ec._Chat_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -4010,6 +4463,11 @@ func (ec *executionContext) _Comment(ctx context.Context, sel ast.SelectionSet, 
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Comment")
+		case "id":
+			out.Values[i] = ec._Comment_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "author":
 			out.Values[i] = ec._Comment_author(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -4017,6 +4475,11 @@ func (ec *executionContext) _Comment(ctx context.Context, sel ast.SelectionSet, 
 			}
 		case "text":
 			out.Values[i] = ec._Comment_text(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "likeCount":
+			out.Values[i] = ec._Comment_likeCount(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -4155,6 +4618,31 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "deletePost":
+			out.Values[i] = ec._Mutation_deletePost(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "likeComment":
+			out.Values[i] = ec._Mutation_likeComment(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "likePost":
+			out.Values[i] = ec._Mutation_likePost(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "commentOnPost":
+			out.Values[i] = ec._Mutation_commentOnPost(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "deleteComment":
+			out.Values[i] = ec._Mutation_deleteComment(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4177,8 +4665,8 @@ func (ec *executionContext) _Post(ctx context.Context, sel ast.SelectionSet, obj
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Post")
-		case "ID":
-			out.Values[i] = ec._Post_ID(ctx, field, obj)
+		case "id":
+			out.Values[i] = ec._Post_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -4201,6 +4689,11 @@ func (ec *executionContext) _Post(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "comments":
 			out.Values[i] = ec._Post_comments(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "likeCount":
+			out.Values[i] = ec._Post_likeCount(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -4433,11 +4926,6 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "email":
 			out.Values[i] = ec._User_email(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "artist":
-			out.Values[i] = ec._User_artist(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

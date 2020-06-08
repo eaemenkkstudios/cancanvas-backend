@@ -15,15 +15,17 @@ type Auction struct {
 }
 
 type Chat struct {
-	ID       string     `json:"ID"`
+	ID       string     `json:"id"`
 	Users    []string   `json:"users"`
 	Messages []*Message `json:"messages"`
 }
 
 type Comment struct {
+	ID        string    `json:"id"`
 	Author    string    `json:"author"`
 	Text      string    `json:"text"`
-	Likes     int       `json:"likes"`
+	LikeCount int       `json:"likeCount"`
+	Likes     []string  `json:"likes"`
 	Timestamp time.Time `json:"timestamp"`
 }
 
@@ -44,17 +46,17 @@ type NewUser struct {
 	Name     string `json:"name"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
-	Artist   bool   `json:"artist"`
 }
 
 type Post struct {
-	ID          string       `json:"ID" bson:"_id,omitempty"`
+	ID          string       `json:"id" bson:"_id,omitempty"`
 	Author      string       `json:"author"`
 	Description *string      `json:"description"`
 	Content     string       `json:"content"`
 	Timestamp   time.Time    `json:"timestamp"`
 	Comments    *CommentList `json:"comments"`
-	Likes       int          `json:"likes"`
+	LikeCount   int          `json:"likeCount"`
+	Likes       []string     `json:"likes"`
 }
 
 type Proposal struct {
@@ -68,7 +70,6 @@ type User struct {
 	Nickname       string   `json:"nickname"`
 	Name           string   `json:"name"`
 	Email          string   `json:"email"`
-	Artist         bool     `json:"artist"`
 	Galery         []string `json:"galery"`
 	Followers      []string `json:"followers"`
 	FollowersCount int      `json:"followersCount"`
