@@ -13,7 +13,7 @@ import (
 
 // AuthRepository interface
 type AuthRepository interface {
-	Login(username string, password string) (string, error)
+	Login(username, password string) (string, error)
 }
 
 type authRespository struct {
@@ -35,12 +35,12 @@ func GetSalt() string {
 }
 
 // GetHash function
-func GetHash(salt string, password string) string {
+func GetHash(salt, password string) string {
 	hash := sha256.Sum256([]byte(salt + password))
 	return string(hash[:])
 }
 
-func (db *authRespository) Login(username string, password string) (string, error) {
+func (db *authRespository) Login(username, password string) (string, error) {
 	collection := db.client.Collection(CollectionUsers)
 	result := collection.FindOne(context.TODO(), bson.M{"_id": username})
 	var user *UserSchema

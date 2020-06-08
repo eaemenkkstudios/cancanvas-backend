@@ -90,6 +90,7 @@ type Mutation {
   follow(nickname: String!): Boolean!
   unfollow(nickname: String!): Boolean!
   sendMessage(msg: String!, receiver: String!): Boolean!
+  sendMessageToDialogflow(msg: String!): String!
   createPost(content: Upload!, description: String): String!
   deletePost(postID: String!): Boolean!
   likeComment(postID: String!, commentID: String!): Boolean!

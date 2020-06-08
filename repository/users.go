@@ -14,9 +14,9 @@ type UserRepository interface {
 	Save(user *model.NewUser) (*model.User, error)
 	FindOne(nickname string) (*model.User, error)
 	FindAll() ([]*model.User, error)
-	Follow(sender string, target string) (bool, error)
-	Unfollow(sender string, target string) (bool, error)
-	IsFollowing(sender string, target string) bool
+	Follow(sender, target string) (bool, error)
+	Unfollow(sender, target string) (bool, error)
+	IsFollowing(sender, target string) bool
 }
 
 type userRepository struct {
@@ -111,7 +111,7 @@ func (db *userRepository) FindAll() ([]*model.User, error) {
 	return users, err
 }
 
-func (db *userRepository) Follow(sender string, target string) (bool, error) {
+func (db *userRepository) Follow(sender, target string) (bool, error) {
 	if sender == target {
 		return false, errors.New("You can't follow yourself")
 	}
@@ -158,7 +158,7 @@ func (db *userRepository) Follow(sender string, target string) (bool, error) {
 	return true, nil
 }
 
-func (db *userRepository) Unfollow(sender string, target string) (bool, error) {
+func (db *userRepository) Unfollow(sender, target string) (bool, error) {
 	if sender == target {
 		return false, errors.New("You can't unfollow yourself")
 	}
@@ -211,7 +211,7 @@ func (db *userRepository) Unfollow(sender string, target string) (bool, error) {
 	return true, nil
 }
 
-func (db *userRepository) IsFollowing(sender string, target string) bool {
+func (db *userRepository) IsFollowing(sender, target string) bool {
 	if sender == target {
 		return false
 	}

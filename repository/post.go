@@ -17,11 +17,11 @@ import (
 // PostRepository interface
 type PostRepository interface {
 	CreatePost(author string, content graphql.Upload, description *string) (string, error)
-	DeletePost(author string, postID string) (bool, error)
-	LikePost(sender string, postID string) (bool, error)
-	CommentOnPost(sender string, postID string, message string) (string, error)
-	DeleteComment(sender string, postID string, commentID string) (bool, error)
-	LikeComment(sender string, postID string, commentID string) (bool, error)
+	DeletePost(author, postID string) (bool, error)
+	LikePost(sender, postID string) (bool, error)
+	CommentOnPost(sender, postID, message string) (string, error)
+	DeleteComment(sender, postID, commentID string) (bool, error)
+	LikeComment(sender, postID, commentID string) (bool, error)
 }
 
 type postRepository struct {
@@ -60,7 +60,7 @@ func (db *postRepository) CreatePost(author string, content graphql.Upload, desc
 	return result.InsertedID.(primitive.ObjectID).Hex(), nil
 }
 
-func (db *postRepository) DeletePost(author string, postID string) (bool, error) {
+func (db *postRepository) DeletePost(author, postID string) (bool, error) {
 	collection := db.client.Collection(CollectionUsers)
 	user := collection.FindOne(context.TODO(), bson.M{"_id": author})
 	var u UserSchema
@@ -88,7 +88,7 @@ func (db *postRepository) DeletePost(author string, postID string) (bool, error)
 	return true, nil
 }
 
-func (db *postRepository) LikePost(sender string, postID string) (bool, error) {
+func (db *postRepository) LikePost(sender, postID string) (bool, error) {
 	collection := db.client.Collection(CollectionUsers)
 	result := collection.FindOne(context.TODO(), bson.M{"_id": sender})
 	var u UserSchema
@@ -130,7 +130,7 @@ func (db *postRepository) LikePost(sender string, postID string) (bool, error) {
 	return true, nil
 }
 
-func (db *postRepository) CommentOnPost(sender string, postID string, message string) (string, error) {
+func (db *postRepository) CommentOnPost(sender, postID, message string) (string, error) {
 	collection := db.client.Collection(CollectionUsers)
 	result := collection.FindOne(context.TODO(), bson.M{"_id": sender})
 	var u UserSchema
@@ -168,7 +168,7 @@ func (db *postRepository) CommentOnPost(sender string, postID string, message st
 	return commentID, nil
 }
 
-func (db *postRepository) DeleteComment(sender string, postID string, commentID string) (bool, error) {
+func (db *postRepository) DeleteComment(sender, postID, commentID string) (bool, error) {
 	collection := db.client.Collection(CollectionUsers)
 	user := collection.FindOne(context.TODO(), bson.M{"_id": sender})
 	var u UserSchema
@@ -206,7 +206,7 @@ func (db *postRepository) DeleteComment(sender string, postID string, commentID 
 	return true, nil
 }
 
-func (db *postRepository) LikeComment(sender string, postID string, commentID string) (bool, error) {
+func (db *postRepository) LikeComment(sender, postID, commentID string) (bool, error) {
 	collection := db.client.Collection(CollectionUsers)
 	result := collection.FindOne(context.TODO(), bson.M{"_id": sender})
 	var u UserSchema

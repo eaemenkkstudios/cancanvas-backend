@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/eaemenkkstudios/cancanvas-backend/graph/model"
+	"github.com/eaemenkkstudios/cancanvas-backend/service"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -14,15 +15,17 @@ import (
 
 // ChatRepository interface
 type ChatRepository interface {
-	SendMessage(sender string, msg string, receiver string) (bool, error)
+	SendMessage(sender, msg, receiver string) (bool, error)
+	SendMessageToDialogflow(sender, msg string) (string, error)
 	NewChatMessage(sender string) (<-chan *model.Message, error)
-	createChat(sender string, receiver string) (string, error)
-	addMessageToChat(chatID string, message string, sender string) error
-	addChatToUser(chatID string, sender string, receiver string) error
+	createChat(sender, receiver string) (string, error)
+	addMessageToChat(chatID, message, sender string) error
+	addChatToUser(chatID, sender, receiver string) error
 }
 
 type chatRepository struct {
-	client *mongo.Database
+	client            *mongo.Database
+	dialogflowService service.DialogflowService
 }
 
 // Chat struct
@@ -44,7 +47,7 @@ type userChat struct {
 	Receiver string `json:"receiver"`
 }
 
-func (db *chatRepository) SendMessage(sender string, msg string, receiver string) (bool, error) {
+func (db *chatRepository) SendMessage(sender, msg, receiver string) (bool, error) {
 	if sender == receiver {
 		return false, errors.New("You can't send a message to yourself")
 	}
@@ -95,6 +98,11 @@ func (db *chatRepository) SendMessage(sender string, msg string, receiver string
 		}
 	}
 	return true, nil
+}
+
+func (db *chatRepository) SendMessageToDialogflow(sender, msg string) (string, error) {
+	result, err := db.dialogflowService.SendMessage(sender, msg)
+	return result, err
 }
 
 func (db *chatRepository) NewChatMessage(sender string) (<-chan *model.Message, error) {
@@ -157,7 +165,7 @@ func (db *chatRepository) NewChatMessage(sender string) (<-chan *model.Message, 
 	return messageChan, nil
 }
 
-func (db *chatRepository) createChat(sender string, receiver string) (string, error) {
+func (db *chatRepository) createChat(sender, receiver string) (string, error) {
 	collection := db.client.Collection(CollectionChats)
 	result, err := collection.InsertOne(context.TODO(), &Chat{
 		Messages: make([]Message, 0),
@@ -169,7 +177,7 @@ func (db *chatRepository) createChat(sender string, receiver string) (string, er
 	return result.InsertedID.(primitive.ObjectID).Hex(), nil
 }
 
-func (db *chatRepository) addMessageToChat(chatID string, message string, sender string) error {
+func (db *chatRepository) addMessageToChat(chatID, message, sender string) error {
 	collection := db.client.Collection(CollectionChats)
 	msg := &Message{
 		Message:   message,
@@ -189,7 +197,7 @@ func (db *chatRepository) addMessageToChat(chatID string, message string, sender
 	return nil
 }
 
-func (db *chatRepository) addChatToUser(chatID string, sender string, receiver string) error {
+func (db *chatRepository) addChatToUser(chatID, sender, receiver string) error {
 	collection := db.client.Collection(CollectionUsers)
 	chat := &userChat{
 		ChatID:   chatID,
@@ -207,7 +215,9 @@ func (db *chatRepository) addChatToUser(chatID string, sender string, receiver s
 // NewChatRepository function
 func NewChatRepository() ChatRepository {
 	client := newDatabaseClient()
+	dialogflowService := service.NewDialogflowService()
 	return &chatRepository{
 		client,
+		dialogflowService,
 	}
 }
