@@ -14,10 +14,11 @@ import (
 
 // Database and Collection names
 const (
-	Database        = "cancanvas"
-	CollectionUsers = "users"
-	CollectionChats = "chats"
-	CollectionPosts = "posts"
+	Database           = "cancanvas"
+	CollectionUsers    = "users"
+	CollectionChats    = "chats"
+	CollectionPosts    = "posts"
+	CollectionAuctions = "auctions"
 )
 
 func newDatabaseClient() *mongo.Database {

@@ -12,7 +12,7 @@ import (
 
 // UserRepository Interface
 type UserRepository interface {
-	Save(user *model.NewUser) (*model.User, error)
+	CreateUser(user *model.NewUser) (*model.User, error)
 	FindOne(nickname string) (*model.User, error)
 	FindAll() ([]*model.User, error)
 	Follow(sender, target string) (bool, error)
@@ -43,7 +43,7 @@ type UserSchema struct {
 	Chats          []userChat `json:"chats"`
 }
 
-func (db *userRepository) Save(user *model.NewUser) (*model.User, error) {
+func (db *userRepository) CreateUser(user *model.NewUser) (*model.User, error) {
 	salt := GetSalt()
 	_, err := db.collection.InsertOne(context.TODO(), &UserSchema{
 		Email:          user.Email,
@@ -69,7 +69,6 @@ func (db *userRepository) Save(user *model.NewUser) (*model.User, error) {
 		Followers:      make([]string, 0),
 		FollowersCount: 0,
 		Following:      make([]string, 0),
-		Galery:         make([]string, 0),
 	}, nil
 }
 
@@ -87,7 +86,6 @@ func (db *userRepository) FindOne(nickname string) (*model.User, error) {
 		Followers:      user.Followers,
 		FollowersCount: user.FollowersCount,
 		Following:      user.Following,
-		Galery:         user.Gallery,
 	}, nil
 }
 
@@ -106,7 +104,6 @@ func (db *userRepository) FindAll() ([]*model.User, error) {
 			Followers:      u.Followers,
 			FollowersCount: u.FollowersCount,
 			Following:      u.Following,
-			Galery:         u.Gallery,
 		})
 	}
 	return users, err

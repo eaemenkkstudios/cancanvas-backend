@@ -13,8 +13,15 @@ import (
 	"github.com/eaemenkkstudios/cancanvas-backend/utils"
 )
 
+var userRepository = repository.NewUserRepository()
+var authRepository = repository.NewAuthRepository()
+var chatRepository = repository.NewChatRepository()
+var postRepository = repository.NewPostRepository()
+var feedRepository = repository.NewFeedRepository()
+var auctionRepository = repository.NewAuctionRepository()
+
 func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) (*model.User, error) {
-	return userRepository.Save(&input)
+	return userRepository.CreateUser(&input)
 }
 
 func (r *mutationResolver) Follow(ctx context.Context, nickname string) (bool, error) {
@@ -97,6 +104,22 @@ func (r *mutationResolver) DeleteComment(ctx context.Context, postID string, com
 	return postRepository.DeleteComment(sender, postID, commentID)
 }
 
+func (r *mutationResolver) CreateAuction(ctx context.Context, offer float64, description string) (*model.Auction, error) {
+	sender, err := utils.GetSenderFromTokenHTTP(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return auctionRepository.CreateAuction(sender, description, offer)
+}
+
+func (r *mutationResolver) CreateBid(ctx context.Context, auctionID string, deadline string, price float64) (*model.Bid, error) {
+	sender, err := utils.GetSenderFromTokenHTTP(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return auctionRepository.CreateBid(sender, auctionID, deadline, price)
+}
+
 func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
 	_, err := utils.GetSenderFromTokenHTTP(ctx)
 	if err != nil {
@@ -133,6 +156,14 @@ func (r *queryResolver) User(ctx context.Context, nickname string) (*model.User,
 	return userRepository.FindOne(nickname)
 }
 
+func (r *queryResolver) UserPosts(ctx context.Context, nickname string, page *int) ([]*model.Post, error) {
+	return postRepository.GetPosts(nickname, page)
+}
+
+func (r *queryResolver) Auctions(ctx context.Context, page *int) ([]*model.Auction, error) {
+	return auctionRepository.GetAuctions(page)
+}
+
 func (r *queryResolver) Login(ctx context.Context, nickname string, password string) (string, error) {
 	return authRepository.Login(nickname, password)
 }
@@ -165,15 +196,3 @@ func (r *Resolver) Subscription() generated.SubscriptionResolver { return &subsc
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type subscriptionResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//    it when you're done.
-//  - You have helper methods in this file. Move them out to keep these resolver files clean.
-var userRepository = repository.NewUserRepository()
-var authRepository = repository.NewAuthRepository()
-var chatRepository = repository.NewChatRepository()
-var postRepository = repository.NewPostRepository()
-var feedRepository = repository.NewFeedRepository()

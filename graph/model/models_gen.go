@@ -7,11 +7,21 @@ import (
 )
 
 type Auction struct {
-	Host      string      `json:"host"`
-	Offer     float64     `json:"offer"`
-	Proposals []*Proposal `json:"proposals"`
-	Timestamp time.Time   `json:"timestamp"`
-	Deadline  time.Time   `json:"deadline"`
+	ID          string    `json:"id" bson:"_id,omitempty"`
+	Host        string    `json:"host"`
+	Description string    `json:"description"`
+	Offer       float64   `json:"offer"`
+	Bids        []*Bid    `json:"bids"`
+	Timestamp   time.Time `json:"timestamp"`
+	Deadline    time.Time `json:"deadline"`
+}
+
+type Bid struct {
+	ID        string    `json:"id"`
+	Issuer    string    `json:"issuer"`
+	Deadline  string    `json:"deadline"`
+	Price     float64   `json:"price"`
+	Timestamp time.Time `json:"timestamp"`
 }
 
 type Chat struct {
@@ -59,18 +69,11 @@ type Post struct {
 	Likes       []string     `json:"likes"`
 }
 
-type Proposal struct {
-	Issuer     string    `json:"issuer"`
-	Price      float64   `json:"price"`
-	Timestamp  time.Time `json:"timestamp"`
-	Subscribed bool      `json:"subscribed"`
-}
-
 type User struct {
 	Nickname       string   `json:"nickname"`
 	Name           string   `json:"name"`
 	Email          string   `json:"email"`
-	Galery         []string `json:"galery"`
+	Picture        string   `json:"picture"`
 	Followers      []string `json:"followers"`
 	FollowersCount int      `json:"followersCount"`
 	Following      []string `json:"following"`

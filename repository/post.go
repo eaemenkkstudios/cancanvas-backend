@@ -12,10 +12,12 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // PostRepository interface
 type PostRepository interface {
+	GetPosts(author string, page *int) ([]*model.Post, error)
 	CreatePost(author string, content graphql.Upload, description *string) (string, error)
 	DeletePost(author, postID string) (bool, error)
 	LikePost(sender, postID string) (bool, error)
@@ -27,6 +29,30 @@ type PostRepository interface {
 type postRepository struct {
 	client     *mongo.Database
 	awsSession service.AwsService
+}
+
+func (db *postRepository) GetPosts(author string, page *int) ([]*model.Post, error) {
+	if page == nil || *page < 1 {
+		*page = 1
+	}
+	collection := db.client.Collection(CollectionPosts)
+	opts := options.Find().
+		SetSkip(int64(PageSize * (*page - 1))).
+		SetLimit(PageSize).
+		SetSort(bson.M{"timestamp": -1})
+	ctx := context.TODO()
+	cursor, err := collection.Find(ctx, bson.M{"author": author}, opts)
+	if err != nil {
+		return nil, errors.New("Could not load posts")
+	}
+	var posts = make([]*model.Post, 0)
+	defer cursor.Close(ctx)
+	for cursor.Next(ctx) {
+		var p model.Post
+		err = cursor.Decode(&p)
+		posts = append(posts, &p)
+	}
+	return posts, err
 }
 
 func (db *postRepository) CreatePost(author string, content graphql.Upload, description *string) (string, error) {

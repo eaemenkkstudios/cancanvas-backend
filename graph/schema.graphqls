@@ -30,17 +30,20 @@ type Post {
   likes: [String!]!
 }
 
-type Proposal {
+type Bid {
+  id: ID!
   issuer: String!
+  deadline: String!
   price: Float!
   timestamp: Time!
-  subscribed: Boolean!
 }
 
 type Auction {
+  id: ID!
   host: String!
+  description: String!
   offer: Float!
-  proposals: [Proposal!]!
+  bids: [Bid!]!
   timestamp: Time!
   deadline: Time!
 }
@@ -62,7 +65,7 @@ type User {
   nickname: String!
   name: String!
   email: String!
-  galery: [String!]!
+  picture: String!
   followers: [String!]!
   followersCount: Int!
   following: [String!]!
@@ -74,6 +77,8 @@ type Query {
   feed(page: Int = 1): [Post!]!
   trending(page: Int = 1): [Post!]!
   user(nickname: String!): User!
+  userPosts(nickname: String!, page: Int = 1): [Post!]!
+  auctions(page: Int = 1): [Auction!]!
   login(nickname: String!, password: String!): String!
   isFollowing(nickname: String!): Boolean!
 }
@@ -97,6 +102,8 @@ type Mutation {
   likePost(postID: String!): Boolean!
   commentOnPost(postID: String!, message: String!): String!
   deleteComment(postID: String!, commentID: String!): Boolean!
+  createAuction(offer: Float!, description: String!): Auction!
+  createBid(auctionID: String!, deadline: String!, price: Float!): Bid!
 }
 
 type Subscription {

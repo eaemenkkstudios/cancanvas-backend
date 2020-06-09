@@ -47,10 +47,20 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Auction struct {
+		Bids        func(childComplexity int) int
+		Deadline    func(childComplexity int) int
+		Description func(childComplexity int) int
+		Host        func(childComplexity int) int
+		ID          func(childComplexity int) int
+		Offer       func(childComplexity int) int
+		Timestamp   func(childComplexity int) int
+	}
+
+	Bid struct {
 		Deadline  func(childComplexity int) int
-		Host      func(childComplexity int) int
-		Offer     func(childComplexity int) int
-		Proposals func(childComplexity int) int
+		ID        func(childComplexity int) int
+		Issuer    func(childComplexity int) int
+		Price     func(childComplexity int) int
 		Timestamp func(childComplexity int) int
 	}
 
@@ -83,6 +93,8 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		CommentOnPost           func(childComplexity int, postID string, message string) int
+		CreateAuction           func(childComplexity int, offer float64, description string) int
+		CreateBid               func(childComplexity int, auctionID string, deadline string, price float64) int
 		CreatePost              func(childComplexity int, content graphql.Upload, description *string) int
 		CreateUser              func(childComplexity int, input model.NewUser) int
 		DeleteComment           func(childComplexity int, postID string, commentID string) int
@@ -106,20 +118,15 @@ type ComplexityRoot struct {
 		Timestamp   func(childComplexity int) int
 	}
 
-	Proposal struct {
-		Issuer     func(childComplexity int) int
-		Price      func(childComplexity int) int
-		Subscribed func(childComplexity int) int
-		Timestamp  func(childComplexity int) int
-	}
-
 	Query struct {
+		Auctions    func(childComplexity int, page *int) int
 		Feed        func(childComplexity int, page *int) int
 		IsFollowing func(childComplexity int, nickname string) int
 		Login       func(childComplexity int, nickname string, password string) int
 		Self        func(childComplexity int) int
 		Trending    func(childComplexity int, page *int) int
 		User        func(childComplexity int, nickname string) int
+		UserPosts   func(childComplexity int, nickname string, page *int) int
 		Users       func(childComplexity int) int
 	}
 
@@ -132,9 +139,9 @@ type ComplexityRoot struct {
 		Followers      func(childComplexity int) int
 		FollowersCount func(childComplexity int) int
 		Following      func(childComplexity int) int
-		Galery         func(childComplexity int) int
 		Name           func(childComplexity int) int
 		Nickname       func(childComplexity int) int
+		Picture        func(childComplexity int) int
 	}
 }
 
@@ -150,6 +157,8 @@ type MutationResolver interface {
 	LikePost(ctx context.Context, postID string) (bool, error)
 	CommentOnPost(ctx context.Context, postID string, message string) (string, error)
 	DeleteComment(ctx context.Context, postID string, commentID string) (bool, error)
+	CreateAuction(ctx context.Context, offer float64, description string) (*model.Auction, error)
+	CreateBid(ctx context.Context, auctionID string, deadline string, price float64) (*model.Bid, error)
 }
 type QueryResolver interface {
 	Users(ctx context.Context) ([]*model.User, error)
@@ -157,6 +166,8 @@ type QueryResolver interface {
 	Feed(ctx context.Context, page *int) ([]*model.Post, error)
 	Trending(ctx context.Context, page *int) ([]*model.Post, error)
 	User(ctx context.Context, nickname string) (*model.User, error)
+	UserPosts(ctx context.Context, nickname string, page *int) ([]*model.Post, error)
+	Auctions(ctx context.Context, page *int) ([]*model.Auction, error)
 	Login(ctx context.Context, nickname string, password string) (string, error)
 	IsFollowing(ctx context.Context, nickname string) (bool, error)
 }
@@ -179,12 +190,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	_ = ec
 	switch typeName + "." + field {
 
+	case "Auction.bids":
+		if e.complexity.Auction.Bids == nil {
+			break
+		}
+
+		return e.complexity.Auction.Bids(childComplexity), true
+
 	case "Auction.deadline":
 		if e.complexity.Auction.Deadline == nil {
 			break
 		}
 
 		return e.complexity.Auction.Deadline(childComplexity), true
+
+	case "Auction.description":
+		if e.complexity.Auction.Description == nil {
+			break
+		}
+
+		return e.complexity.Auction.Description(childComplexity), true
 
 	case "Auction.host":
 		if e.complexity.Auction.Host == nil {
@@ -193,6 +218,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Auction.Host(childComplexity), true
 
+	case "Auction.id":
+		if e.complexity.Auction.ID == nil {
+			break
+		}
+
+		return e.complexity.Auction.ID(childComplexity), true
+
 	case "Auction.offer":
 		if e.complexity.Auction.Offer == nil {
 			break
@@ -200,19 +232,47 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Auction.Offer(childComplexity), true
 
-	case "Auction.proposals":
-		if e.complexity.Auction.Proposals == nil {
-			break
-		}
-
-		return e.complexity.Auction.Proposals(childComplexity), true
-
 	case "Auction.timestamp":
 		if e.complexity.Auction.Timestamp == nil {
 			break
 		}
 
 		return e.complexity.Auction.Timestamp(childComplexity), true
+
+	case "Bid.deadline":
+		if e.complexity.Bid.Deadline == nil {
+			break
+		}
+
+		return e.complexity.Bid.Deadline(childComplexity), true
+
+	case "Bid.id":
+		if e.complexity.Bid.ID == nil {
+			break
+		}
+
+		return e.complexity.Bid.ID(childComplexity), true
+
+	case "Bid.issuer":
+		if e.complexity.Bid.Issuer == nil {
+			break
+		}
+
+		return e.complexity.Bid.Issuer(childComplexity), true
+
+	case "Bid.price":
+		if e.complexity.Bid.Price == nil {
+			break
+		}
+
+		return e.complexity.Bid.Price(childComplexity), true
+
+	case "Bid.timestamp":
+		if e.complexity.Bid.Timestamp == nil {
+			break
+		}
+
+		return e.complexity.Bid.Timestamp(childComplexity), true
 
 	case "Chat.id":
 		if e.complexity.Chat.ID == nil {
@@ -330,6 +390,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.CommentOnPost(childComplexity, args["postID"].(string), args["message"].(string)), true
+
+	case "Mutation.createAuction":
+		if e.complexity.Mutation.CreateAuction == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createAuction_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateAuction(childComplexity, args["offer"].(float64), args["description"].(string)), true
+
+	case "Mutation.createBid":
+		if e.complexity.Mutation.CreateBid == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createBid_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateBid(childComplexity, args["auctionID"].(string), args["deadline"].(string), args["price"].(float64)), true
 
 	case "Mutation.createPost":
 		if e.complexity.Mutation.CreatePost == nil {
@@ -507,33 +591,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Post.Timestamp(childComplexity), true
 
-	case "Proposal.issuer":
-		if e.complexity.Proposal.Issuer == nil {
+	case "Query.auctions":
+		if e.complexity.Query.Auctions == nil {
 			break
 		}
 
-		return e.complexity.Proposal.Issuer(childComplexity), true
-
-	case "Proposal.price":
-		if e.complexity.Proposal.Price == nil {
-			break
+		args, err := ec.field_Query_auctions_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
 		}
 
-		return e.complexity.Proposal.Price(childComplexity), true
-
-	case "Proposal.subscribed":
-		if e.complexity.Proposal.Subscribed == nil {
-			break
-		}
-
-		return e.complexity.Proposal.Subscribed(childComplexity), true
-
-	case "Proposal.timestamp":
-		if e.complexity.Proposal.Timestamp == nil {
-			break
-		}
-
-		return e.complexity.Proposal.Timestamp(childComplexity), true
+		return e.complexity.Query.Auctions(childComplexity, args["page"].(*int)), true
 
 	case "Query.feed":
 		if e.complexity.Query.Feed == nil {
@@ -602,6 +670,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.User(childComplexity, args["nickname"].(string)), true
 
+	case "Query.userPosts":
+		if e.complexity.Query.UserPosts == nil {
+			break
+		}
+
+		args, err := ec.field_Query_userPosts_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.UserPosts(childComplexity, args["nickname"].(string), args["page"].(*int)), true
+
 	case "Query.users":
 		if e.complexity.Query.Users == nil {
 			break
@@ -644,13 +724,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.Following(childComplexity), true
 
-	case "User.galery":
-		if e.complexity.User.Galery == nil {
-			break
-		}
-
-		return e.complexity.User.Galery(childComplexity), true
-
 	case "User.name":
 		if e.complexity.User.Name == nil {
 			break
@@ -664,6 +737,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.User.Nickname(childComplexity), true
+
+	case "User.picture":
+		if e.complexity.User.Picture == nil {
+			break
+		}
+
+		return e.complexity.User.Picture(childComplexity), true
 
 	}
 	return 0, false
@@ -778,17 +858,20 @@ type Post {
   likes: [String!]!
 }
 
-type Proposal {
+type Bid {
+  id: ID!
   issuer: String!
+  deadline: String!
   price: Float!
   timestamp: Time!
-  subscribed: Boolean!
 }
 
 type Auction {
+  id: ID!
   host: String!
+  description: String!
   offer: Float!
-  proposals: [Proposal!]!
+  bids: [Bid!]!
   timestamp: Time!
   deadline: Time!
 }
@@ -810,7 +893,7 @@ type User {
   nickname: String!
   name: String!
   email: String!
-  galery: [String!]!
+  picture: String!
   followers: [String!]!
   followersCount: Int!
   following: [String!]!
@@ -822,6 +905,8 @@ type Query {
   feed(page: Int = 1): [Post!]!
   trending(page: Int = 1): [Post!]!
   user(nickname: String!): User!
+  userPosts(nickname: String!, page: Int = 1): [Post!]!
+  auctions(page: Int = 1): [Auction!]!
   login(nickname: String!, password: String!): String!
   isFollowing(nickname: String!): Boolean!
 }
@@ -845,6 +930,8 @@ type Mutation {
   likePost(postID: String!): Boolean!
   commentOnPost(postID: String!, message: String!): String!
   deleteComment(postID: String!, commentID: String!): Boolean!
+  createAuction(offer: Float!, description: String!): Auction!
+  createBid(auctionID: String!, deadline: String!, price: Float!): Bid!
 }
 
 type Subscription {
@@ -876,6 +963,58 @@ func (ec *executionContext) field_Mutation_commentOnPost_args(ctx context.Contex
 		}
 	}
 	args["message"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_createAuction_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 float64
+	if tmp, ok := rawArgs["offer"]; ok {
+		arg0, err = ec.unmarshalNFloat2float64(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["offer"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["description"]; ok {
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["description"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_createBid_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["auctionID"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["auctionID"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["deadline"]; ok {
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["deadline"] = arg1
+	var arg2 float64
+	if tmp, ok := rawArgs["price"]; ok {
+		arg2, err = ec.unmarshalNFloat2float64(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["price"] = arg2
 	return args, nil
 }
 
@@ -1065,6 +1204,20 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_auctions_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *int
+	if tmp, ok := rawArgs["page"]; ok {
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["page"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_feed_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -1129,6 +1282,28 @@ func (ec *executionContext) field_Query_trending_args(ctx context.Context, rawAr
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_userPosts_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["nickname"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["nickname"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["page"]; ok {
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["page"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_user_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -1179,6 +1354,40 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
+func (ec *executionContext) _Auction_id(ctx context.Context, field graphql.CollectedField, obj *model.Auction) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Auction",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Auction_host(ctx context.Context, field graphql.CollectedField, obj *model.Auction) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -1197,6 +1406,40 @@ func (ec *executionContext) _Auction_host(ctx context.Context, field graphql.Col
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Host, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Auction_description(ctx context.Context, field graphql.CollectedField, obj *model.Auction) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Auction",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1247,7 +1490,7 @@ func (ec *executionContext) _Auction_offer(ctx context.Context, field graphql.Co
 	return ec.marshalNFloat2float64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Auction_proposals(ctx context.Context, field graphql.CollectedField, obj *model.Auction) (ret graphql.Marshaler) {
+func (ec *executionContext) _Auction_bids(ctx context.Context, field graphql.CollectedField, obj *model.Auction) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1264,7 +1507,7 @@ func (ec *executionContext) _Auction_proposals(ctx context.Context, field graphq
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Proposals, nil
+		return obj.Bids, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1276,9 +1519,9 @@ func (ec *executionContext) _Auction_proposals(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Proposal)
+	res := resTmp.([]*model.Bid)
 	fc.Result = res
-	return ec.marshalNProposal2ᚕᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐProposalᚄ(ctx, field.Selections, res)
+	return ec.marshalNBid2ᚕᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐBidᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Auction_timestamp(ctx context.Context, field graphql.CollectedField, obj *model.Auction) (ret graphql.Marshaler) {
@@ -1333,6 +1576,176 @@ func (ec *executionContext) _Auction_deadline(ctx context.Context, field graphql
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Deadline, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Bid_id(ctx context.Context, field graphql.CollectedField, obj *model.Bid) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Bid",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Bid_issuer(ctx context.Context, field graphql.CollectedField, obj *model.Bid) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Bid",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Issuer, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Bid_deadline(ctx context.Context, field graphql.CollectedField, obj *model.Bid) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Bid",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Deadline, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Bid_price(ctx context.Context, field graphql.CollectedField, obj *model.Bid) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Bid",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Price, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Bid_timestamp(ctx context.Context, field graphql.CollectedField, obj *model.Bid) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Bid",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Timestamp, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2310,6 +2723,88 @@ func (ec *executionContext) _Mutation_deleteComment(ctx context.Context, field g
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_createAuction(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_createAuction_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateAuction(rctx, args["offer"].(float64), args["description"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Auction)
+	fc.Result = res
+	return ec.marshalNAuction2ᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐAuction(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_createBid(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_createBid_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateBid(rctx, args["auctionID"].(string), args["deadline"].(string), args["price"].(float64))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Bid)
+	fc.Result = res
+	return ec.marshalNBid2ᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐBid(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Post_id(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2579,142 +3074,6 @@ func (ec *executionContext) _Post_likes(ctx context.Context, field graphql.Colle
 	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Proposal_issuer(ctx context.Context, field graphql.CollectedField, obj *model.Proposal) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Proposal",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Issuer, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Proposal_price(ctx context.Context, field graphql.CollectedField, obj *model.Proposal) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Proposal",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Price, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(float64)
-	fc.Result = res
-	return ec.marshalNFloat2float64(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Proposal_timestamp(ctx context.Context, field graphql.CollectedField, obj *model.Proposal) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Proposal",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Timestamp, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Proposal_subscribed(ctx context.Context, field graphql.CollectedField, obj *model.Proposal) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Proposal",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Subscribed, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Query_users(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2904,6 +3263,88 @@ func (ec *executionContext) _Query_user(ctx context.Context, field graphql.Colle
 	res := resTmp.(*model.User)
 	fc.Result = res
 	return ec.marshalNUser2ᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_userPosts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_userPosts_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().UserPosts(rctx, args["nickname"].(string), args["page"].(*int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Post)
+	fc.Result = res
+	return ec.marshalNPost2ᚕᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐPostᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_auctions(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_auctions_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Auctions(rctx, args["page"].(*int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Auction)
+	fc.Result = res
+	return ec.marshalNAuction2ᚕᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐAuctionᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_login(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3203,7 +3644,7 @@ func (ec *executionContext) _User_email(ctx context.Context, field graphql.Colle
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _User_galery(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_picture(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3220,7 +3661,7 @@ func (ec *executionContext) _User_galery(ctx context.Context, field graphql.Coll
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Galery, nil
+		return obj.Picture, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3232,9 +3673,9 @@ func (ec *executionContext) _User_galery(ctx context.Context, field graphql.Coll
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _User_followers(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
@@ -4449,8 +4890,18 @@ func (ec *executionContext) _Auction(ctx context.Context, sel ast.SelectionSet, 
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Auction")
+		case "id":
+			out.Values[i] = ec._Auction_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "host":
 			out.Values[i] = ec._Auction_host(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "description":
+			out.Values[i] = ec._Auction_description(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -4459,8 +4910,8 @@ func (ec *executionContext) _Auction(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "proposals":
-			out.Values[i] = ec._Auction_proposals(ctx, field, obj)
+		case "bids":
+			out.Values[i] = ec._Auction_bids(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -4471,6 +4922,53 @@ func (ec *executionContext) _Auction(ctx context.Context, sel ast.SelectionSet, 
 			}
 		case "deadline":
 			out.Values[i] = ec._Auction_deadline(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var bidImplementors = []string{"Bid"}
+
+func (ec *executionContext) _Bid(ctx context.Context, sel ast.SelectionSet, obj *model.Bid) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, bidImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Bid")
+		case "id":
+			out.Values[i] = ec._Bid_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "issuer":
+			out.Values[i] = ec._Bid_issuer(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "deadline":
+			out.Values[i] = ec._Bid_deadline(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "price":
+			out.Values[i] = ec._Bid_price(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "timestamp":
+			out.Values[i] = ec._Bid_timestamp(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -4718,6 +5216,16 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "createAuction":
+			out.Values[i] = ec._Mutation_createAuction(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "createBid":
+			out.Values[i] = ec._Mutation_createBid(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4774,48 +5282,6 @@ func (ec *executionContext) _Post(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "likes":
 			out.Values[i] = ec._Post_likes(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var proposalImplementors = []string{"Proposal"}
-
-func (ec *executionContext) _Proposal(ctx context.Context, sel ast.SelectionSet, obj *model.Proposal) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, proposalImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("Proposal")
-		case "issuer":
-			out.Values[i] = ec._Proposal_issuer(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "price":
-			out.Values[i] = ec._Proposal_price(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "timestamp":
-			out.Values[i] = ec._Proposal_timestamp(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "subscribed":
-			out.Values[i] = ec._Proposal_subscribed(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -4915,6 +5381,34 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
+		case "userPosts":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_userPosts(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "auctions":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_auctions(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "login":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -5004,8 +5498,8 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "galery":
-			out.Values[i] = ec._User_galery(ctx, field, obj)
+		case "picture":
+			out.Values[i] = ec._User_picture(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -5280,6 +5774,108 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 
 // region    ***************************** type.gotpl *****************************
 
+func (ec *executionContext) marshalNAuction2githubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐAuction(ctx context.Context, sel ast.SelectionSet, v model.Auction) graphql.Marshaler {
+	return ec._Auction(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNAuction2ᚕᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐAuctionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Auction) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNAuction2ᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐAuction(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNAuction2ᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐAuction(ctx context.Context, sel ast.SelectionSet, v *model.Auction) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Auction(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNBid2githubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐBid(ctx context.Context, sel ast.SelectionSet, v model.Bid) graphql.Marshaler {
+	return ec._Bid(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNBid2ᚕᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐBidᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Bid) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNBid2ᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐBid(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNBid2ᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐBid(ctx context.Context, sel ast.SelectionSet, v *model.Bid) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Bid(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
 	return graphql.UnmarshalBoolean(v)
 }
@@ -5505,57 +6101,6 @@ func (ec *executionContext) marshalNPost2ᚖgithubᚗcomᚋeaemenkkstudiosᚋcan
 		return graphql.Null
 	}
 	return ec._Post(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNProposal2githubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐProposal(ctx context.Context, sel ast.SelectionSet, v model.Proposal) graphql.Marshaler {
-	return ec._Proposal(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNProposal2ᚕᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐProposalᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Proposal) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNProposal2ᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐProposal(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
-}
-
-func (ec *executionContext) marshalNProposal2ᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐProposal(ctx context.Context, sel ast.SelectionSet, v *model.Proposal) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._Proposal(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
