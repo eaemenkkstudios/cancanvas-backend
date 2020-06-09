@@ -78,6 +78,7 @@ type Query {
   trending(page: Int = 1): [Post!]!
   user(nickname: String!): User!
   userPosts(nickname: String!, page: Int = 1): [Post!]!
+  usersByTags(tags: [String!]!, page: Int = 1): [User!]!
   auctions(page: Int = 1): [Auction!]!
   login(nickname: String!, password: String!): String!
   isFollowing(nickname: String!): Boolean!
@@ -92,6 +93,9 @@ input NewUser {
 
 type Mutation {
   createUser(input: NewUser!): User!
+  updateUserPicture(picture: Upload!): String!
+  addTagToUser(tag: String!): Boolean!
+  removeTagFromUser(tag: String!): Boolean!
   follow(nickname: String!): Boolean!
   unfollow(nickname: String!): Boolean!
   sendMessage(msg: String!, receiver: String!): Boolean!

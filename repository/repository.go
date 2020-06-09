@@ -19,6 +19,7 @@ const (
 	CollectionChats    = "chats"
 	CollectionPosts    = "posts"
 	CollectionAuctions = "auctions"
+	CollectionTags     = "tags"
 )
 
 func newDatabaseClient() *mongo.Database {

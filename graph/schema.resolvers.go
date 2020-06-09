@@ -18,10 +18,35 @@ var authRepository = repository.NewAuthRepository()
 var chatRepository = repository.NewChatRepository()
 var postRepository = repository.NewPostRepository()
 var feedRepository = repository.NewFeedRepository()
+var tagsRepository = repository.NewTagsRepository()
 var auctionRepository = repository.NewAuctionRepository()
 
 func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) (*model.User, error) {
 	return userRepository.CreateUser(&input)
+}
+
+func (r *mutationResolver) UpdateUserPicture(ctx context.Context, picture graphql.Upload) (string, error) {
+	sender, err := utils.GetSenderFromTokenHTTP(ctx)
+	if err != nil {
+		return "", err
+	}
+	return userRepository.UpdateProfilePicture(sender, picture)
+}
+
+func (r *mutationResolver) AddTagToUser(ctx context.Context, tag string) (bool, error) {
+	sender, err := utils.GetSenderFromTokenHTTP(ctx)
+	if err != nil {
+		return false, err
+	}
+	return tagsRepository.AddTagToUser(sender, tag)
+}
+
+func (r *mutationResolver) RemoveTagFromUser(ctx context.Context, tag string) (bool, error) {
+	sender, err := utils.GetSenderFromTokenHTTP(ctx)
+	if err != nil {
+		return false, err
+	}
+	return tagsRepository.RemoveTagFromUser(sender, tag)
 }
 
 func (r *mutationResolver) Follow(ctx context.Context, nickname string) (bool, error) {
@@ -158,6 +183,10 @@ func (r *queryResolver) User(ctx context.Context, nickname string) (*model.User,
 
 func (r *queryResolver) UserPosts(ctx context.Context, nickname string, page *int) ([]*model.Post, error) {
 	return postRepository.GetPosts(nickname, page)
+}
+
+func (r *queryResolver) UsersByTags(ctx context.Context, tags []string, page *int) ([]*model.User, error) {
+	return tagsRepository.GetUsersPerTags(tags, page)
 }
 
 func (r *queryResolver) Auctions(ctx context.Context, page *int) ([]*model.Auction, error) {

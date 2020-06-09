@@ -5,7 +5,9 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/99designs/gqlgen/graphql"
 	"github.com/eaemenkkstudios/cancanvas-backend/graph/model"
+	"github.com/eaemenkkstudios/cancanvas-backend/service"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -18,10 +20,12 @@ type UserRepository interface {
 	Follow(sender, target string) (bool, error)
 	Unfollow(sender, target string) (bool, error)
 	IsFollowing(sender, target string) bool
+	UpdateProfilePicture(sender string, picture graphql.Upload) (string, error)
 }
 
 type userRepository struct {
 	client     *mongo.Database
+	awsSession service.AwsService
 	collection *mongo.Collection
 }
 
@@ -35,7 +39,7 @@ type UserSchema struct {
 	Nickname       string     `json:"nickname" bson:"_id"`
 	Name           string     `json:"name"`
 	Email          string     `json:"email"`
-	Gallery        []string   `json:"gallery"`
+	Picture        string     `json:"picture"`
 	Followers      []string   `json:"followers"`
 	FollowersCount int        `json:"followerscount"`
 	Following      []string   `json:"following"`
@@ -49,7 +53,6 @@ func (db *userRepository) CreateUser(user *model.NewUser) (*model.User, error) {
 		Email:          user.Email,
 		Nickname:       strings.ToLower(user.Nickname),
 		Name:           user.Name,
-		Gallery:        make([]string, 0),
 		Following:      make([]string, 0),
 		FollowersCount: 0,
 		Followers:      make([]string, 0),
@@ -229,11 +232,40 @@ func (db *userRepository) IsFollowing(sender, target string) bool {
 	return false
 }
 
+func (db *userRepository) UpdateProfilePicture(sender string, picture graphql.Upload) (string, error) {
+	result := db.collection.FindOne(context.TODO(), bson.M{"_id": sender})
+	var user UserSchema
+	err := result.Decode(&user)
+	if err != nil {
+		return "", errors.New("User not found")
+	}
+	newPictureURL, err := db.awsSession.UploadFile(picture, "profile")
+	if err != nil {
+		return "", err
+	}
+	urlPrefix := db.awsSession.GetURLPrefix()
+	if user.Picture != "" {
+		_, err := db.awsSession.DeleteFile(strings.TrimPrefix(user.Picture, urlPrefix))
+		if err != nil {
+			return "", err
+		}
+	}
+	_, err = db.collection.UpdateOne(context.TODO(), bson.M{"_id": sender}, bson.M{
+		"$set": bson.M{"picture": newPictureURL},
+	})
+	if err != nil {
+		return "", err
+	}
+	return newPictureURL, nil
+}
+
 // NewUserRepository function
 func NewUserRepository() UserRepository {
 	client := newDatabaseClient()
+	awsSession := service.NewAwsService()
 	return &userRepository{
 		client:     client,
+		awsSession: awsSession,
 		collection: client.Collection(CollectionUsers),
 	}
 }
