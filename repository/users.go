@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/eaemenkkstudios/cancanvas-backend/graph/model"
 	"go.mongodb.org/mongo-driver/bson"
@@ -46,7 +47,7 @@ func (db *userRepository) Save(user *model.NewUser) (*model.User, error) {
 	salt := GetSalt()
 	_, err := db.collection.InsertOne(context.TODO(), &UserSchema{
 		Email:          user.Email,
-		Nickname:       user.Nickname,
+		Nickname:       strings.ToLower(user.Nickname),
 		Name:           user.Name,
 		Gallery:        make([]string, 0),
 		Following:      make([]string, 0),
