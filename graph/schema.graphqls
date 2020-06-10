@@ -30,6 +30,33 @@ type Post {
   likes: [String!]!
 }
 
+type FeedUser {
+  nickname: String!
+  name: String!
+  picture: String!
+}
+
+type FeedPost {
+  id: ID!
+  author: FeedUser!
+  description: String
+  content: String!
+  timestamp: Time!
+  comments: CommentList!
+  likeCount: Int!
+  likes: [String!]!
+}
+
+type FeedAuction {
+  id: ID!
+  host: FeedUser!
+  description: String!
+  offer: Float!
+  bids: [Bid!]!
+  timestamp: Time!
+  deadline: Time!
+}
+
 type Bid {
   id: ID!
   issuer: String!
@@ -84,15 +111,15 @@ type Login {
 type Query {
   users(nickname: String = "", page: Int = 1): [User!]!
   self: User!
-  feed(page: Int = 1): [Post!]!
-  trending(page: Int = 1): [Post!]!
+  feed(page: Int = 1): [FeedPost!]!
+  trending(page: Int = 1): [FeedPost!]!
   user(nickname: String!): User!
   userPosts(nickname: String!, page: Int = 1): [Post!]!
   usersByTags(tags: [String!]!, page: Int = 1): [User!]!
-  auctions(page: Int = 1): [Auction!]!
+  auctions(page: Int = 1): [FeedAuction!]!
   login(nickname: String!, password: String!): Login!
   isFollowing(nickname: String!): Boolean!
-  acceptedBids: [Auction!]!
+  acceptedBids: [FeedAuction!]!
 }
 
 input NewUser {

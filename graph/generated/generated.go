@@ -85,6 +85,33 @@ type ComplexityRoot struct {
 		List  func(childComplexity int) int
 	}
 
+	FeedAuction struct {
+		Bids        func(childComplexity int) int
+		Deadline    func(childComplexity int) int
+		Description func(childComplexity int) int
+		Host        func(childComplexity int) int
+		ID          func(childComplexity int) int
+		Offer       func(childComplexity int) int
+		Timestamp   func(childComplexity int) int
+	}
+
+	FeedPost struct {
+		Author      func(childComplexity int) int
+		Comments    func(childComplexity int) int
+		Content     func(childComplexity int) int
+		Description func(childComplexity int) int
+		ID          func(childComplexity int) int
+		LikeCount   func(childComplexity int) int
+		Likes       func(childComplexity int) int
+		Timestamp   func(childComplexity int) int
+	}
+
+	FeedUser struct {
+		Name     func(childComplexity int) int
+		Nickname func(childComplexity int) int
+		Picture  func(childComplexity int) int
+	}
+
 	Login struct {
 		First func(childComplexity int) int
 		Token func(childComplexity int) int
@@ -193,15 +220,15 @@ type MutationResolver interface {
 type QueryResolver interface {
 	Users(ctx context.Context, nickname *string, page *int) ([]*model.User, error)
 	Self(ctx context.Context) (*model.User, error)
-	Feed(ctx context.Context, page *int) ([]*model.Post, error)
-	Trending(ctx context.Context, page *int) ([]*model.Post, error)
+	Feed(ctx context.Context, page *int) ([]*model.FeedPost, error)
+	Trending(ctx context.Context, page *int) ([]*model.FeedPost, error)
 	User(ctx context.Context, nickname string) (*model.User, error)
 	UserPosts(ctx context.Context, nickname string, page *int) ([]*model.Post, error)
 	UsersByTags(ctx context.Context, tags []string, page *int) ([]*model.User, error)
-	Auctions(ctx context.Context, page *int) ([]*model.Auction, error)
+	Auctions(ctx context.Context, page *int) ([]*model.FeedAuction, error)
 	Login(ctx context.Context, nickname string, password string) (*model.Login, error)
 	IsFollowing(ctx context.Context, nickname string) (bool, error)
-	AcceptedBids(ctx context.Context) ([]*model.Auction, error)
+	AcceptedBids(ctx context.Context) ([]*model.FeedAuction, error)
 }
 type SubscriptionResolver interface {
 	NewChatMessage(ctx context.Context) (<-chan *model.Message, error)
@@ -389,6 +416,132 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.CommentList.List(childComplexity), true
+
+	case "FeedAuction.bids":
+		if e.complexity.FeedAuction.Bids == nil {
+			break
+		}
+
+		return e.complexity.FeedAuction.Bids(childComplexity), true
+
+	case "FeedAuction.deadline":
+		if e.complexity.FeedAuction.Deadline == nil {
+			break
+		}
+
+		return e.complexity.FeedAuction.Deadline(childComplexity), true
+
+	case "FeedAuction.description":
+		if e.complexity.FeedAuction.Description == nil {
+			break
+		}
+
+		return e.complexity.FeedAuction.Description(childComplexity), true
+
+	case "FeedAuction.host":
+		if e.complexity.FeedAuction.Host == nil {
+			break
+		}
+
+		return e.complexity.FeedAuction.Host(childComplexity), true
+
+	case "FeedAuction.id":
+		if e.complexity.FeedAuction.ID == nil {
+			break
+		}
+
+		return e.complexity.FeedAuction.ID(childComplexity), true
+
+	case "FeedAuction.offer":
+		if e.complexity.FeedAuction.Offer == nil {
+			break
+		}
+
+		return e.complexity.FeedAuction.Offer(childComplexity), true
+
+	case "FeedAuction.timestamp":
+		if e.complexity.FeedAuction.Timestamp == nil {
+			break
+		}
+
+		return e.complexity.FeedAuction.Timestamp(childComplexity), true
+
+	case "FeedPost.author":
+		if e.complexity.FeedPost.Author == nil {
+			break
+		}
+
+		return e.complexity.FeedPost.Author(childComplexity), true
+
+	case "FeedPost.comments":
+		if e.complexity.FeedPost.Comments == nil {
+			break
+		}
+
+		return e.complexity.FeedPost.Comments(childComplexity), true
+
+	case "FeedPost.content":
+		if e.complexity.FeedPost.Content == nil {
+			break
+		}
+
+		return e.complexity.FeedPost.Content(childComplexity), true
+
+	case "FeedPost.description":
+		if e.complexity.FeedPost.Description == nil {
+			break
+		}
+
+		return e.complexity.FeedPost.Description(childComplexity), true
+
+	case "FeedPost.id":
+		if e.complexity.FeedPost.ID == nil {
+			break
+		}
+
+		return e.complexity.FeedPost.ID(childComplexity), true
+
+	case "FeedPost.likeCount":
+		if e.complexity.FeedPost.LikeCount == nil {
+			break
+		}
+
+		return e.complexity.FeedPost.LikeCount(childComplexity), true
+
+	case "FeedPost.likes":
+		if e.complexity.FeedPost.Likes == nil {
+			break
+		}
+
+		return e.complexity.FeedPost.Likes(childComplexity), true
+
+	case "FeedPost.timestamp":
+		if e.complexity.FeedPost.Timestamp == nil {
+			break
+		}
+
+		return e.complexity.FeedPost.Timestamp(childComplexity), true
+
+	case "FeedUser.name":
+		if e.complexity.FeedUser.Name == nil {
+			break
+		}
+
+		return e.complexity.FeedUser.Name(childComplexity), true
+
+	case "FeedUser.nickname":
+		if e.complexity.FeedUser.Nickname == nil {
+			break
+		}
+
+		return e.complexity.FeedUser.Nickname(childComplexity), true
+
+	case "FeedUser.picture":
+		if e.complexity.FeedUser.Picture == nil {
+			break
+		}
+
+		return e.complexity.FeedUser.Picture(childComplexity), true
 
 	case "Login.first":
 		if e.complexity.Login.First == nil {
@@ -1071,6 +1224,33 @@ type Post {
   likes: [String!]!
 }
 
+type FeedUser {
+  nickname: String!
+  name: String!
+  picture: String!
+}
+
+type FeedPost {
+  id: ID!
+  author: FeedUser!
+  description: String
+  content: String!
+  timestamp: Time!
+  comments: CommentList!
+  likeCount: Int!
+  likes: [String!]!
+}
+
+type FeedAuction {
+  id: ID!
+  host: FeedUser!
+  description: String!
+  offer: Float!
+  bids: [Bid!]!
+  timestamp: Time!
+  deadline: Time!
+}
+
 type Bid {
   id: ID!
   issuer: String!
@@ -1125,15 +1305,15 @@ type Login {
 type Query {
   users(nickname: String = "", page: Int = 1): [User!]!
   self: User!
-  feed(page: Int = 1): [Post!]!
-  trending(page: Int = 1): [Post!]!
+  feed(page: Int = 1): [FeedPost!]!
+  trending(page: Int = 1): [FeedPost!]!
   user(nickname: String!): User!
   userPosts(nickname: String!, page: Int = 1): [Post!]!
   usersByTags(tags: [String!]!, page: Int = 1): [User!]!
-  auctions(page: Int = 1): [Auction!]!
+  auctions(page: Int = 1): [FeedAuction!]!
   login(nickname: String!, password: String!): Login!
   isFollowing(nickname: String!): Boolean!
-  acceptedBids: [Auction!]!
+  acceptedBids: [FeedAuction!]!
 }
 
 input NewUser {
@@ -2596,6 +2776,615 @@ func (ec *executionContext) _CommentList_count(ctx context.Context, field graphq
 	res := resTmp.(int)
 	fc.Result = res
 	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FeedAuction_id(ctx context.Context, field graphql.CollectedField, obj *model.FeedAuction) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FeedAuction",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FeedAuction_host(ctx context.Context, field graphql.CollectedField, obj *model.FeedAuction) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FeedAuction",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Host, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.FeedUser)
+	fc.Result = res
+	return ec.marshalNFeedUser2ᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐFeedUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FeedAuction_description(ctx context.Context, field graphql.CollectedField, obj *model.FeedAuction) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FeedAuction",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FeedAuction_offer(ctx context.Context, field graphql.CollectedField, obj *model.FeedAuction) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FeedAuction",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Offer, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FeedAuction_bids(ctx context.Context, field graphql.CollectedField, obj *model.FeedAuction) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FeedAuction",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Bids, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Bid)
+	fc.Result = res
+	return ec.marshalNBid2ᚕᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐBidᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FeedAuction_timestamp(ctx context.Context, field graphql.CollectedField, obj *model.FeedAuction) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FeedAuction",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Timestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FeedAuction_deadline(ctx context.Context, field graphql.CollectedField, obj *model.FeedAuction) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FeedAuction",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Deadline, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FeedPost_id(ctx context.Context, field graphql.CollectedField, obj *model.FeedPost) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FeedPost",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FeedPost_author(ctx context.Context, field graphql.CollectedField, obj *model.FeedPost) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FeedPost",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Author, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.FeedUser)
+	fc.Result = res
+	return ec.marshalNFeedUser2ᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐFeedUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FeedPost_description(ctx context.Context, field graphql.CollectedField, obj *model.FeedPost) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FeedPost",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FeedPost_content(ctx context.Context, field graphql.CollectedField, obj *model.FeedPost) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FeedPost",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Content, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FeedPost_timestamp(ctx context.Context, field graphql.CollectedField, obj *model.FeedPost) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FeedPost",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Timestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FeedPost_comments(ctx context.Context, field graphql.CollectedField, obj *model.FeedPost) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FeedPost",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Comments, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.CommentList)
+	fc.Result = res
+	return ec.marshalNCommentList2ᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐCommentList(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FeedPost_likeCount(ctx context.Context, field graphql.CollectedField, obj *model.FeedPost) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FeedPost",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LikeCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FeedPost_likes(ctx context.Context, field graphql.CollectedField, obj *model.FeedPost) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FeedPost",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Likes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FeedUser_nickname(ctx context.Context, field graphql.CollectedField, obj *model.FeedUser) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FeedUser",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Nickname, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FeedUser_name(ctx context.Context, field graphql.CollectedField, obj *model.FeedUser) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FeedUser",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FeedUser_picture(ctx context.Context, field graphql.CollectedField, obj *model.FeedUser) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FeedUser",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Picture, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Login_token(ctx context.Context, field graphql.CollectedField, obj *model.Login) (ret graphql.Marshaler) {
@@ -4084,9 +4873,9 @@ func (ec *executionContext) _Query_feed(ctx context.Context, field graphql.Colle
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Post)
+	res := resTmp.([]*model.FeedPost)
 	fc.Result = res
-	return ec.marshalNPost2ᚕᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐPostᚄ(ctx, field.Selections, res)
+	return ec.marshalNFeedPost2ᚕᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐFeedPostᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_trending(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -4125,9 +4914,9 @@ func (ec *executionContext) _Query_trending(ctx context.Context, field graphql.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Post)
+	res := resTmp.([]*model.FeedPost)
 	fc.Result = res
-	return ec.marshalNPost2ᚕᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐPostᚄ(ctx, field.Selections, res)
+	return ec.marshalNFeedPost2ᚕᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐFeedPostᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_user(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -4289,9 +5078,9 @@ func (ec *executionContext) _Query_auctions(ctx context.Context, field graphql.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Auction)
+	res := resTmp.([]*model.FeedAuction)
 	fc.Result = res
-	return ec.marshalNAuction2ᚕᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐAuctionᚄ(ctx, field.Selections, res)
+	return ec.marshalNFeedAuction2ᚕᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐFeedAuctionᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_login(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -4405,9 +5194,9 @@ func (ec *executionContext) _Query_acceptedBids(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Auction)
+	res := resTmp.([]*model.FeedAuction)
 	fc.Result = res
-	return ec.marshalNAuction2ᚕᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐAuctionᚄ(ctx, field.Selections, res)
+	return ec.marshalNFeedAuction2ᚕᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐFeedAuctionᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -6226,6 +7015,159 @@ func (ec *executionContext) _CommentList(ctx context.Context, sel ast.SelectionS
 	return out
 }
 
+var feedAuctionImplementors = []string{"FeedAuction"}
+
+func (ec *executionContext) _FeedAuction(ctx context.Context, sel ast.SelectionSet, obj *model.FeedAuction) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, feedAuctionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("FeedAuction")
+		case "id":
+			out.Values[i] = ec._FeedAuction_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "host":
+			out.Values[i] = ec._FeedAuction_host(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "description":
+			out.Values[i] = ec._FeedAuction_description(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "offer":
+			out.Values[i] = ec._FeedAuction_offer(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "bids":
+			out.Values[i] = ec._FeedAuction_bids(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "timestamp":
+			out.Values[i] = ec._FeedAuction_timestamp(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "deadline":
+			out.Values[i] = ec._FeedAuction_deadline(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var feedPostImplementors = []string{"FeedPost"}
+
+func (ec *executionContext) _FeedPost(ctx context.Context, sel ast.SelectionSet, obj *model.FeedPost) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, feedPostImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("FeedPost")
+		case "id":
+			out.Values[i] = ec._FeedPost_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "author":
+			out.Values[i] = ec._FeedPost_author(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "description":
+			out.Values[i] = ec._FeedPost_description(ctx, field, obj)
+		case "content":
+			out.Values[i] = ec._FeedPost_content(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "timestamp":
+			out.Values[i] = ec._FeedPost_timestamp(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "comments":
+			out.Values[i] = ec._FeedPost_comments(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "likeCount":
+			out.Values[i] = ec._FeedPost_likeCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "likes":
+			out.Values[i] = ec._FeedPost_likes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var feedUserImplementors = []string{"FeedUser"}
+
+func (ec *executionContext) _FeedUser(ctx context.Context, sel ast.SelectionSet, obj *model.FeedUser) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, feedUserImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("FeedUser")
+		case "nickname":
+			out.Values[i] = ec._FeedUser_nickname(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "name":
+			out.Values[i] = ec._FeedUser_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "picture":
+			out.Values[i] = ec._FeedUser_picture(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var loginImplementors = []string{"Login"}
 
 func (ec *executionContext) _Login(ctx context.Context, sel ast.SelectionSet, obj *model.Login) graphql.Marshaler {
@@ -7025,43 +7967,6 @@ func (ec *executionContext) marshalNAuction2githubᚗcomᚋeaemenkkstudiosᚋcan
 	return ec._Auction(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNAuction2ᚕᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐAuctionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Auction) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNAuction2ᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐAuction(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
-}
-
 func (ec *executionContext) marshalNAuction2ᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐAuction(ctx context.Context, sel ast.SelectionSet, v *model.Auction) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -7200,6 +8105,122 @@ func (ec *executionContext) marshalNCommentList2ᚖgithubᚗcomᚋeaemenkkstudio
 		return graphql.Null
 	}
 	return ec._CommentList(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNFeedAuction2githubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐFeedAuction(ctx context.Context, sel ast.SelectionSet, v model.FeedAuction) graphql.Marshaler {
+	return ec._FeedAuction(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNFeedAuction2ᚕᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐFeedAuctionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.FeedAuction) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNFeedAuction2ᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐFeedAuction(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNFeedAuction2ᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐFeedAuction(ctx context.Context, sel ast.SelectionSet, v *model.FeedAuction) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._FeedAuction(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNFeedPost2githubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐFeedPost(ctx context.Context, sel ast.SelectionSet, v model.FeedPost) graphql.Marshaler {
+	return ec._FeedPost(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNFeedPost2ᚕᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐFeedPostᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.FeedPost) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNFeedPost2ᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐFeedPost(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNFeedPost2ᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐFeedPost(ctx context.Context, sel ast.SelectionSet, v *model.FeedPost) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._FeedPost(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNFeedUser2githubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐFeedUser(ctx context.Context, sel ast.SelectionSet, v model.FeedUser) graphql.Marshaler {
+	return ec._FeedUser(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNFeedUser2ᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐFeedUser(ctx context.Context, sel ast.SelectionSet, v *model.FeedUser) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._FeedUser(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v interface{}) (float64, error) {

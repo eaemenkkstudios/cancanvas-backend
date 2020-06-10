@@ -45,6 +45,33 @@ type CommentList struct {
 	Count int        `json:"count"`
 }
 
+type FeedAuction struct {
+	ID          string    `json:"id"`
+	Host        *FeedUser `json:"host"`
+	Description string    `json:"description"`
+	Offer       float64   `json:"offer"`
+	Bids        []*Bid    `json:"bids"`
+	Timestamp   time.Time `json:"timestamp"`
+	Deadline    time.Time `json:"deadline"`
+}
+
+type FeedPost struct {
+	ID          string       `json:"id"`
+	Author      *FeedUser    `json:"author"`
+	Description *string      `json:"description"`
+	Content     string       `json:"content"`
+	Timestamp   time.Time    `json:"timestamp"`
+	Comments    *CommentList `json:"comments"`
+	LikeCount   int          `json:"likeCount"`
+	Likes       []string     `json:"likes"`
+}
+
+type FeedUser struct {
+	Nickname string `json:"nickname"`
+	Name     string `json:"name"`
+	Picture  string `json:"picture"`
+}
+
 type Login struct {
 	Token string `json:"token"`
 	First bool   `json:"first"`

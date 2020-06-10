@@ -14,14 +14,6 @@ import (
 	"github.com/eaemenkkstudios/cancanvas-backend/utils"
 )
 
-var userRepository = repository.NewUserRepository()
-var authRepository = repository.NewAuthRepository()
-var chatRepository = repository.NewChatRepository()
-var postRepository = repository.NewPostRepository()
-var feedRepository = repository.NewFeedRepository()
-var tagsRepository = repository.NewTagsRepository()
-var auctionRepository = repository.NewAuctionRepository()
-
 func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) (*model.User, error) {
 	return userRepository.CreateUser(&input)
 }
@@ -202,7 +194,7 @@ func (r *queryResolver) Self(ctx context.Context) (*model.User, error) {
 	return userRepository.FindOne(nickname)
 }
 
-func (r *queryResolver) Feed(ctx context.Context, page *int) ([]*model.Post, error) {
+func (r *queryResolver) Feed(ctx context.Context, page *int) ([]*model.FeedPost, error) {
 	nickname, err := utils.GetSenderFromTokenHTTP(ctx)
 	if err != nil {
 		return nil, err
@@ -210,7 +202,7 @@ func (r *queryResolver) Feed(ctx context.Context, page *int) ([]*model.Post, err
 	return feedRepository.GetFeed(nickname, page)
 }
 
-func (r *queryResolver) Trending(ctx context.Context, page *int) ([]*model.Post, error) {
+func (r *queryResolver) Trending(ctx context.Context, page *int) ([]*model.FeedPost, error) {
 	return feedRepository.GetTrending(page)
 }
 
@@ -230,7 +222,7 @@ func (r *queryResolver) UsersByTags(ctx context.Context, tags []string, page *in
 	return tagsRepository.GetUsersPerTags(tags, page)
 }
 
-func (r *queryResolver) Auctions(ctx context.Context, page *int) ([]*model.Auction, error) {
+func (r *queryResolver) Auctions(ctx context.Context, page *int) ([]*model.FeedAuction, error) {
 	return auctionRepository.GetAuctions(page)
 }
 
@@ -246,7 +238,7 @@ func (r *queryResolver) IsFollowing(ctx context.Context, nickname string) (bool,
 	return userRepository.IsFollowing(sender, nickname), nil
 }
 
-func (r *queryResolver) AcceptedBids(ctx context.Context) ([]*model.Auction, error) {
+func (r *queryResolver) AcceptedBids(ctx context.Context) ([]*model.FeedAuction, error) {
 	sender, err := utils.GetSenderFromTokenHTTP(ctx)
 	if err != nil {
 		return nil, err
@@ -274,3 +266,17 @@ func (r *Resolver) Subscription() generated.SubscriptionResolver { return &subsc
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type subscriptionResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//    it when you're done.
+//  - You have helper methods in this file. Move them out to keep these resolver files clean.
+var userRepository = repository.NewUserRepository()
+var authRepository = repository.NewAuthRepository()
+var chatRepository = repository.NewChatRepository()
+var postRepository = repository.NewPostRepository()
+var feedRepository = repository.NewFeedRepository()
+var tagsRepository = repository.NewTagsRepository()
+var auctionRepository = repository.NewAuctionRepository()

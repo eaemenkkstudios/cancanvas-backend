@@ -9,16 +9,15 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // AuctionRepository interface
 type AuctionRepository interface {
-	GetAuctions(page *int) ([]*model.Auction, error)
+	GetAuctions(page *int) ([]*model.FeedAuction, error)
 	CreateAuction(sender, description string, offer float64) (*model.Auction, error)
 	CreateBid(sender, auctionID, deadline string, price float64) (*model.Bid, error)
 	AcceptBid(sender, auctionID, bidID string) (bool, error)
-	AcceptedBids(sender string) ([]*model.Auction, error)
+	AcceptedBids(sender string) ([]*model.FeedAuction, error)
 }
 
 type auctionRepository struct {
@@ -44,26 +43,56 @@ func (db *auctionRepository) CreateAuction(sender, description string, offer flo
 	return auction, nil
 }
 
-func (db *auctionRepository) GetAuctions(page *int) ([]*model.Auction, error) {
+type feedAuction struct {
+	ID          string        `bson:"_id"`
+	Host        []*UserSchema `bson:"host"`
+	Description string        `bson:"description"`
+	Offer       float64       `bson:"offer"`
+	Bids        []*model.Bid  `bson:"bids"`
+	Timestamp   time.Time     `bson:"timestamp"`
+	Deadline    time.Time     `bson:"deadline"`
+}
+
+func (db *auctionRepository) GetAuctions(page *int) ([]*model.FeedAuction, error) {
 	if page == nil || *page < 1 {
 		*page = 1
 	}
 	collection := db.client.Collection(CollectionAuctions)
-	opts := options.Find().
-		SetSkip(int64(PageSize * (*page - 1))).
-		SetLimit(PageSize).
-		SetSort(bson.M{"timestamp": -1})
 	ctx := context.TODO()
-	cursor, err := collection.Find(ctx, bson.M{}, opts)
+	cursor, err := collection.Aggregate(ctx, mongo.Pipeline{
+		bson.D{{
+			Key: "$lookup",
+			Value: bson.M{
+				"from":         CollectionUsers,
+				"localField":   "host",
+				"foreignField": "_id",
+				"as":           "host",
+			}}},
+		bson.D{{Key: "$skip", Value: int64(PageSize * (*page - 1))}},
+		bson.D{{Key: "$limit", Value: PageSize}},
+		bson.D{{Key: "$sort", Value: bson.M{"timestamp": -1}}},
+	})
 	if err != nil {
 		return nil, errors.New("Could not load posts")
 	}
-	var auctions = make([]*model.Auction, 0)
+	var auctions = make([]*model.FeedAuction, 0)
 	defer cursor.Close(ctx)
 	for cursor.Next(ctx) {
-		var a model.Auction
+		var a feedAuction
 		err = cursor.Decode(&a)
-		auctions = append(auctions, &a)
+		auctions = append(auctions, &model.FeedAuction{
+			ID: a.ID,
+			Host: &model.FeedUser{
+				Name:     a.Host[0].Name,
+				Nickname: a.Host[0].Nickname,
+				Picture:  a.Host[0].Picture,
+			},
+			Bids:        a.Bids,
+			Deadline:    a.Deadline,
+			Description: a.Description,
+			Offer:       a.Offer,
+			Timestamp:   a.Timestamp,
+		})
 	}
 	return auctions, err
 }
@@ -142,22 +171,43 @@ func (db *auctionRepository) AcceptBid(sender, auctionID, bidID string) (bool, e
 	return true, nil
 }
 
-func (db *auctionRepository) AcceptedBids(sender string) ([]*model.Auction, error) {
+func (db *auctionRepository) AcceptedBids(sender string) ([]*model.FeedAuction, error) {
 	collection := db.client.Collection(CollectionAuctions)
 	ctx := context.TODO()
-	cursor, err := collection.Find(ctx, bson.M{})
+	cursor, err := collection.Find(ctx, mongo.Pipeline{
+		bson.D{{
+			Key: "$lookup",
+			Value: bson.M{
+				"from":         CollectionUsers,
+				"localField":   "host",
+				"foreignField": "_id",
+				"as":           "host",
+			}}},
+	})
 	if err != nil {
 		return nil, err
 	}
 	defer cursor.Close(ctx)
-	auctionList := make([]*model.Auction, 0)
+	auctionList := make([]*model.FeedAuction, 0)
 	for cursor.Next(ctx) {
-		var a model.Auction
+		var a feedAuction
 		err = cursor.Decode(&a)
-		if a.Host != sender {
+		if a.Host[0].Nickname != sender {
 			for _, b := range a.Bids {
 				if b.Issuer == sender && b.Selected {
-					auctionList = append(auctionList, &a)
+					auctionList = append(auctionList, &model.FeedAuction{
+						ID: a.ID,
+						Host: &model.FeedUser{
+							Name:     a.Host[0].Name,
+							Nickname: a.Host[0].Nickname,
+							Picture:  a.Host[0].Picture,
+						},
+						Bids:        a.Bids,
+						Deadline:    a.Deadline,
+						Description: a.Description,
+						Offer:       a.Offer,
+						Timestamp:   a.Timestamp,
+					})
 				}
 			}
 		}
