@@ -22,6 +22,7 @@ type Bid struct {
 	Deadline  string    `json:"deadline"`
 	Price     float64   `json:"price"`
 	Timestamp time.Time `json:"timestamp"`
+	Selected  bool      `json:"selected"`
 }
 
 type Chat struct {
@@ -42,6 +43,11 @@ type Comment struct {
 type CommentList struct {
 	List  []*Comment `json:"list"`
 	Count int        `json:"count"`
+}
+
+type Login struct {
+	Token string `json:"token"`
+	First bool   `json:"first"`
 }
 
 type Message struct {
@@ -77,4 +83,6 @@ type User struct {
 	Followers      []string `json:"followers"`
 	FollowersCount int      `json:"followersCount"`
 	Following      []string `json:"following"`
+	Lat            float64  `json:"lat"`
+	Lng            float64  `json:"lng"`
 }

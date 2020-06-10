@@ -61,6 +61,7 @@ type ComplexityRoot struct {
 		ID        func(childComplexity int) int
 		Issuer    func(childComplexity int) int
 		Price     func(childComplexity int) int
+		Selected  func(childComplexity int) int
 		Timestamp func(childComplexity int) int
 	}
 
@@ -84,6 +85,11 @@ type ComplexityRoot struct {
 		List  func(childComplexity int) int
 	}
 
+	Login struct {
+		First func(childComplexity int) int
+		Token func(childComplexity int) int
+	}
+
 	Message struct {
 		ChatID    func(childComplexity int) int
 		Message   func(childComplexity int) int
@@ -92,6 +98,7 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
+		AcceptBid               func(childComplexity int, auctionID string, bidID string) int
 		AddTagToUser            func(childComplexity int, tag string) int
 		CommentOnPost           func(childComplexity int, postID string, message string) int
 		CreateAuction           func(childComplexity int, offer float64, description string) int
@@ -107,6 +114,7 @@ type ComplexityRoot struct {
 		SendMessage             func(childComplexity int, msg string, receiver string) int
 		SendMessageToDialogflow func(childComplexity int, msg string) int
 		Unfollow                func(childComplexity int, nickname string) int
+		UpdateUserLocation      func(childComplexity int, lat float64, lng float64) int
 		UpdateUserPicture       func(childComplexity int, picture graphql.Upload) int
 	}
 
@@ -122,16 +130,17 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Auctions    func(childComplexity int, page *int) int
-		Feed        func(childComplexity int, page *int) int
-		IsFollowing func(childComplexity int, nickname string) int
-		Login       func(childComplexity int, nickname string, password string) int
-		Self        func(childComplexity int) int
-		Trending    func(childComplexity int, page *int) int
-		User        func(childComplexity int, nickname string) int
-		UserPosts   func(childComplexity int, nickname string, page *int) int
-		Users       func(childComplexity int) int
-		UsersByTags func(childComplexity int, tags []string, page *int) int
+		AcceptedBids func(childComplexity int) int
+		Auctions     func(childComplexity int, page *int) int
+		Feed         func(childComplexity int, page *int) int
+		IsFollowing  func(childComplexity int, nickname string) int
+		Login        func(childComplexity int, nickname string, password string) int
+		Self         func(childComplexity int) int
+		Trending     func(childComplexity int, page *int) int
+		User         func(childComplexity int, nickname string) int
+		UserPosts    func(childComplexity int, nickname string, page *int) int
+		Users        func(childComplexity int) int
+		UsersByTags  func(childComplexity int, tags []string, page *int) int
 	}
 
 	Subscription struct {
@@ -143,6 +152,8 @@ type ComplexityRoot struct {
 		Followers      func(childComplexity int) int
 		FollowersCount func(childComplexity int) int
 		Following      func(childComplexity int) int
+		Lat            func(childComplexity int) int
+		Lng            func(childComplexity int) int
 		Name           func(childComplexity int) int
 		Nickname       func(childComplexity int) int
 		Picture        func(childComplexity int) int
@@ -152,6 +163,7 @@ type ComplexityRoot struct {
 type MutationResolver interface {
 	CreateUser(ctx context.Context, input model.NewUser) (*model.User, error)
 	UpdateUserPicture(ctx context.Context, picture graphql.Upload) (string, error)
+	UpdateUserLocation(ctx context.Context, lat float64, lng float64) (bool, error)
 	AddTagToUser(ctx context.Context, tag string) (bool, error)
 	RemoveTagFromUser(ctx context.Context, tag string) (bool, error)
 	Follow(ctx context.Context, nickname string) (bool, error)
@@ -166,6 +178,7 @@ type MutationResolver interface {
 	DeleteComment(ctx context.Context, postID string, commentID string) (bool, error)
 	CreateAuction(ctx context.Context, offer float64, description string) (*model.Auction, error)
 	CreateBid(ctx context.Context, auctionID string, deadline string, price float64) (*model.Bid, error)
+	AcceptBid(ctx context.Context, auctionID string, bidID string) (bool, error)
 }
 type QueryResolver interface {
 	Users(ctx context.Context) ([]*model.User, error)
@@ -176,8 +189,9 @@ type QueryResolver interface {
 	UserPosts(ctx context.Context, nickname string, page *int) ([]*model.Post, error)
 	UsersByTags(ctx context.Context, tags []string, page *int) ([]*model.User, error)
 	Auctions(ctx context.Context, page *int) ([]*model.Auction, error)
-	Login(ctx context.Context, nickname string, password string) (string, error)
+	Login(ctx context.Context, nickname string, password string) (*model.Login, error)
 	IsFollowing(ctx context.Context, nickname string) (bool, error)
+	AcceptedBids(ctx context.Context) ([]*model.Auction, error)
 }
 type SubscriptionResolver interface {
 	NewChatMessage(ctx context.Context) (<-chan *model.Message, error)
@@ -275,6 +289,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Bid.Price(childComplexity), true
 
+	case "Bid.selected":
+		if e.complexity.Bid.Selected == nil {
+			break
+		}
+
+		return e.complexity.Bid.Selected(childComplexity), true
+
 	case "Bid.timestamp":
 		if e.complexity.Bid.Timestamp == nil {
 			break
@@ -359,6 +380,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.CommentList.List(childComplexity), true
 
+	case "Login.first":
+		if e.complexity.Login.First == nil {
+			break
+		}
+
+		return e.complexity.Login.First(childComplexity), true
+
+	case "Login.token":
+		if e.complexity.Login.Token == nil {
+			break
+		}
+
+		return e.complexity.Login.Token(childComplexity), true
+
 	case "Message.chatID":
 		if e.complexity.Message.ChatID == nil {
 			break
@@ -386,6 +421,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Message.Timestamp(childComplexity), true
+
+	case "Mutation.acceptBid":
+		if e.complexity.Mutation.AcceptBid == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_acceptBid_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AcceptBid(childComplexity, args["auctionID"].(string), args["bidID"].(string)), true
 
 	case "Mutation.addTagToUser":
 		if e.complexity.Mutation.AddTagToUser == nil {
@@ -567,6 +614,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.Unfollow(childComplexity, args["nickname"].(string)), true
 
+	case "Mutation.updateUserLocation":
+		if e.complexity.Mutation.UpdateUserLocation == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateUserLocation_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateUserLocation(childComplexity, args["lat"].(float64), args["lng"].(float64)), true
+
 	case "Mutation.updateUserPicture":
 		if e.complexity.Mutation.UpdateUserPicture == nil {
 			break
@@ -634,6 +693,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Post.Timestamp(childComplexity), true
+
+	case "Query.acceptedBids":
+		if e.complexity.Query.AcceptedBids == nil {
+			break
+		}
+
+		return e.complexity.Query.AcceptedBids(childComplexity), true
 
 	case "Query.auctions":
 		if e.complexity.Query.Auctions == nil {
@@ -780,6 +846,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.Following(childComplexity), true
 
+	case "User.lat":
+		if e.complexity.User.Lat == nil {
+			break
+		}
+
+		return e.complexity.User.Lat(childComplexity), true
+
+	case "User.lng":
+		if e.complexity.User.Lng == nil {
+			break
+		}
+
+		return e.complexity.User.Lng(childComplexity), true
+
 	case "User.name":
 		if e.complexity.User.Name == nil {
 			break
@@ -920,6 +1000,7 @@ type Bid {
   deadline: String!
   price: Float!
   timestamp: Time!
+  selected: Boolean!
 }
 
 type Auction {
@@ -953,6 +1034,13 @@ type User {
   followers: [String!]!
   followersCount: Int!
   following: [String!]!
+  lat: Float!
+  lng: Float!
+}
+
+type Login {
+  token: String!
+  first: Boolean!
 }
 
 type Query {
@@ -964,8 +1052,9 @@ type Query {
   userPosts(nickname: String!, page: Int = 1): [Post!]!
   usersByTags(tags: [String!]!, page: Int = 1): [User!]!
   auctions(page: Int = 1): [Auction!]!
-  login(nickname: String!, password: String!): String!
+  login(nickname: String!, password: String!): Login!
   isFollowing(nickname: String!): Boolean!
+  acceptedBids: [Auction!]!
 }
 
 input NewUser {
@@ -978,6 +1067,7 @@ input NewUser {
 type Mutation {
   createUser(input: NewUser!): User!
   updateUserPicture(picture: Upload!): String!
+  updateUserLocation(lat: Float!, lng: Float!): Boolean!
   addTagToUser(tag: String!): Boolean!
   removeTagFromUser(tag: String!): Boolean!
   follow(nickname: String!): Boolean!
@@ -992,6 +1082,7 @@ type Mutation {
   deleteComment(postID: String!, commentID: String!): Boolean!
   createAuction(offer: Float!, description: String!): Auction!
   createBid(auctionID: String!, deadline: String!, price: Float!): Bid!
+  acceptBid(auctionID: String!, bidID: String!): Boolean!
 }
 
 type Subscription {
@@ -1003,6 +1094,28 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) field_Mutation_acceptBid_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["auctionID"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["auctionID"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["bidID"]; ok {
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["bidID"] = arg1
+	return args, nil
+}
 
 func (ec *executionContext) field_Mutation_addTagToUser_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
@@ -1275,6 +1388,28 @@ func (ec *executionContext) field_Mutation_unfollow_args(ctx context.Context, ra
 		}
 	}
 	args["nickname"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateUserLocation_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 float64
+	if tmp, ok := rawArgs["lat"]; ok {
+		arg0, err = ec.unmarshalNFloat2float64(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["lat"] = arg0
+	var arg1 float64
+	if tmp, ok := rawArgs["lng"]; ok {
+		arg1, err = ec.unmarshalNFloat2float64(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["lng"] = arg1
 	return args, nil
 }
 
@@ -1886,6 +2021,40 @@ func (ec *executionContext) _Bid_timestamp(ctx context.Context, field graphql.Co
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Bid_selected(ctx context.Context, field graphql.CollectedField, obj *model.Bid) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Bid",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Selected, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Chat_id(ctx context.Context, field graphql.CollectedField, obj *model.Chat) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2260,6 +2429,74 @@ func (ec *executionContext) _CommentList_count(ctx context.Context, field graphq
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Login_token(ctx context.Context, field graphql.CollectedField, obj *model.Login) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Login",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Token, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Login_first(ctx context.Context, field graphql.CollectedField, obj *model.Login) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Login",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.First, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Message_chatID(ctx context.Context, field graphql.CollectedField, obj *model.Message) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2476,6 +2713,47 @@ func (ec *executionContext) _Mutation_updateUserPicture(ctx context.Context, fie
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_updateUserLocation(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_updateUserLocation_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateUserLocation(rctx, args["lat"].(float64), args["lng"].(float64))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_addTagToUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3050,6 +3328,47 @@ func (ec *executionContext) _Mutation_createBid(ctx context.Context, field graph
 	res := resTmp.(*model.Bid)
 	fc.Result = res
 	return ec.marshalNBid2ᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐBid(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_acceptBid(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_acceptBid_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().AcceptBid(rctx, args["auctionID"].(string), args["bidID"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Post_id(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
@@ -3671,9 +3990,9 @@ func (ec *executionContext) _Query_login(ctx context.Context, field graphql.Coll
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*model.Login)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNLogin2ᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐLogin(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_isFollowing(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3715,6 +4034,40 @@ func (ec *executionContext) _Query_isFollowing(ctx context.Context, field graphq
 	res := resTmp.(bool)
 	fc.Result = res
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_acceptedBids(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().AcceptedBids(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Auction)
+	fc.Result = res
+	return ec.marshalNAuction2ᚕᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐAuctionᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -4066,6 +4419,74 @@ func (ec *executionContext) _User_following(ctx context.Context, field graphql.C
 	res := resTmp.([]string)
 	fc.Result = res
 	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _User_lat(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "User",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Lat, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _User_lng(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "User",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Lng, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -5260,6 +5681,11 @@ func (ec *executionContext) _Bid(ctx context.Context, sel ast.SelectionSet, obj 
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "selected":
+			out.Values[i] = ec._Bid_selected(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5392,6 +5818,38 @@ func (ec *executionContext) _CommentList(ctx context.Context, sel ast.SelectionS
 	return out
 }
 
+var loginImplementors = []string{"Login"}
+
+func (ec *executionContext) _Login(ctx context.Context, sel ast.SelectionSet, obj *model.Login) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, loginImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Login")
+		case "token":
+			out.Values[i] = ec._Login_token(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "first":
+			out.Values[i] = ec._Login_first(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var messageImplementors = []string{"Message"}
 
 func (ec *executionContext) _Message(ctx context.Context, sel ast.SelectionSet, obj *model.Message) graphql.Marshaler {
@@ -5456,6 +5914,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "updateUserPicture":
 			out.Values[i] = ec._Mutation_updateUserPicture(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "updateUserLocation":
+			out.Values[i] = ec._Mutation_updateUserLocation(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -5526,6 +5989,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "createBid":
 			out.Values[i] = ec._Mutation_createBid(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "acceptBid":
+			out.Values[i] = ec._Mutation_acceptBid(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -5754,6 +6222,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
+		case "acceptedBids":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_acceptedBids(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "__type":
 			out.Values[i] = ec._Query___type(ctx, field)
 		case "__schema":
@@ -5832,6 +6314,16 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "following":
 			out.Values[i] = ec._User_following(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "lat":
+			out.Values[i] = ec._User_lat(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "lng":
+			out.Values[i] = ec._User_lng(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -6312,6 +6804,20 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNLogin2githubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐLogin(ctx context.Context, sel ast.SelectionSet, v model.Login) graphql.Marshaler {
+	return ec._Login(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNLogin2ᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐLogin(ctx context.Context, sel ast.SelectionSet, v *model.Login) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Login(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNMessage2githubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐMessage(ctx context.Context, sel ast.SelectionSet, v model.Message) graphql.Marshaler {

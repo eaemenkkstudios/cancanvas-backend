@@ -36,6 +36,7 @@ type Bid {
   deadline: String!
   price: Float!
   timestamp: Time!
+  selected: Boolean!
 }
 
 type Auction {
@@ -69,6 +70,13 @@ type User {
   followers: [String!]!
   followersCount: Int!
   following: [String!]!
+  lat: Float!
+  lng: Float!
+}
+
+type Login {
+  token: String!
+  first: Boolean!
 }
 
 type Query {
@@ -80,8 +88,9 @@ type Query {
   userPosts(nickname: String!, page: Int = 1): [Post!]!
   usersByTags(tags: [String!]!, page: Int = 1): [User!]!
   auctions(page: Int = 1): [Auction!]!
-  login(nickname: String!, password: String!): String!
+  login(nickname: String!, password: String!): Login!
   isFollowing(nickname: String!): Boolean!
+  acceptedBids: [Auction!]!
 }
 
 input NewUser {
@@ -94,6 +103,7 @@ input NewUser {
 type Mutation {
   createUser(input: NewUser!): User!
   updateUserPicture(picture: Upload!): String!
+  updateUserLocation(lat: Float!, lng: Float!): Boolean!
   addTagToUser(tag: String!): Boolean!
   removeTagFromUser(tag: String!): Boolean!
   follow(nickname: String!): Boolean!
@@ -108,6 +118,7 @@ type Mutation {
   deleteComment(postID: String!, commentID: String!): Boolean!
   createAuction(offer: Float!, description: String!): Auction!
   createBid(auctionID: String!, deadline: String!, price: Float!): Bid!
+  acceptBid(auctionID: String!, bidID: String!): Boolean!
 }
 
 type Subscription {

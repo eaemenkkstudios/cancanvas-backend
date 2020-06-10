@@ -33,6 +33,14 @@ func (r *mutationResolver) UpdateUserPicture(ctx context.Context, picture graphq
 	return userRepository.UpdateProfilePicture(sender, picture)
 }
 
+func (r *mutationResolver) UpdateUserLocation(ctx context.Context, lat float64, lng float64) (bool, error) {
+	sender, err := utils.GetSenderFromTokenHTTP(ctx)
+	if err != nil {
+		return false, err
+	}
+	return userRepository.UpdateLocation(sender, lat, lng)
+}
+
 func (r *mutationResolver) AddTagToUser(ctx context.Context, tag string) (bool, error) {
 	sender, err := utils.GetSenderFromTokenHTTP(ctx)
 	if err != nil {
@@ -145,6 +153,14 @@ func (r *mutationResolver) CreateBid(ctx context.Context, auctionID string, dead
 	return auctionRepository.CreateBid(sender, auctionID, deadline, price)
 }
 
+func (r *mutationResolver) AcceptBid(ctx context.Context, auctionID string, bidID string) (bool, error) {
+	sender, err := utils.GetSenderFromTokenHTTP(ctx)
+	if err != nil {
+		return false, err
+	}
+	return auctionRepository.AcceptBid(sender, auctionID, bidID)
+}
+
 func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
 	_, err := utils.GetSenderFromTokenHTTP(ctx)
 	if err != nil {
@@ -193,7 +209,7 @@ func (r *queryResolver) Auctions(ctx context.Context, page *int) ([]*model.Aucti
 	return auctionRepository.GetAuctions(page)
 }
 
-func (r *queryResolver) Login(ctx context.Context, nickname string, password string) (string, error) {
+func (r *queryResolver) Login(ctx context.Context, nickname string, password string) (*model.Login, error) {
 	return authRepository.Login(nickname, password)
 }
 
@@ -203,6 +219,14 @@ func (r *queryResolver) IsFollowing(ctx context.Context, nickname string) (bool,
 		return false, err
 	}
 	return userRepository.IsFollowing(sender, nickname), nil
+}
+
+func (r *queryResolver) AcceptedBids(ctx context.Context) ([]*model.Auction, error) {
+	sender, err := utils.GetSenderFromTokenHTTP(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return auctionRepository.AcceptedBids(sender)
 }
 
 func (r *subscriptionResolver) NewChatMessage(ctx context.Context) (<-chan *model.Message, error) {
