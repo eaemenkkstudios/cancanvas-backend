@@ -10,13 +10,14 @@ import (
 	"github.com/eaemenkkstudios/cancanvas-backend/service"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // UserRepository Interface
 type UserRepository interface {
 	CreateUser(user *model.NewUser) (*model.User, error)
 	FindOne(nickname string) (*model.User, error)
-	FindAll() ([]*model.User, error)
+	FindAll(nickname *string, page *int) ([]*model.User, error)
 	Follow(sender, target string) (bool, error)
 	Unfollow(sender, target string) (bool, error)
 	IsFollowing(sender, target string) bool
@@ -117,9 +118,19 @@ func (db *userRepository) FindOne(nickname string) (*model.User, error) {
 	}, nil
 }
 
-func (db *userRepository) FindAll() ([]*model.User, error) {
+func (db *userRepository) FindAll(nickname *string, page *int) ([]*model.User, error) {
+	if page == nil || *page < 1 {
+		*page = 1
+	}
+	document := bson.M{}
+	if nickname != nil && *nickname != "" {
+		document = bson.M{"_id": bson.M{"$regex": nickname}}
+	}
+	opts := options.Find().
+		SetSkip(int64(PageSize * (*page - 1))).
+		SetLimit(PageSize)
 	ctx := context.TODO()
-	cursor, err := db.collection.Find(ctx, bson.D{})
+	cursor, err := db.collection.Find(ctx, document, opts)
 	defer cursor.Close(ctx)
 	var users []*model.User
 	for cursor.Next(ctx) {

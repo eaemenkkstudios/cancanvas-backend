@@ -177,12 +177,12 @@ func (r *mutationResolver) AcceptBid(ctx context.Context, auctionID string, bidI
 	return auctionRepository.AcceptBid(sender, auctionID, bidID)
 }
 
-func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
+func (r *queryResolver) Users(ctx context.Context, nickname *string, page *int) ([]*model.User, error) {
 	_, err := utils.GetSenderFromTokenHTTP(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return userRepository.FindAll()
+	return userRepository.FindAll(nickname, page)
 }
 
 func (r *queryResolver) Self(ctx context.Context) (*model.User, error) {

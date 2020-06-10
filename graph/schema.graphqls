@@ -82,7 +82,7 @@ type Login {
 }
 
 type Query {
-  users: [User!]!
+  users(nickname: String = "", page: Int = 1): [User!]!
   self: User!
   feed(page: Int = 1): [Post!]!
   trending(page: Int = 1): [Post!]!
