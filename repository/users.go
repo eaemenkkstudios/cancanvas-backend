@@ -21,6 +21,7 @@ type UserRepository interface {
 	Unfollow(sender, target string) (bool, error)
 	IsFollowing(sender, target string) bool
 	UpdateProfilePicture(sender string, picture graphql.Upload) (string, error)
+	UpdateLocation(sender string, lat, lng float64) (bool, error)
 }
 
 type userRepository struct {
@@ -45,11 +46,14 @@ type UserSchema struct {
 	Following      []string   `json:"following"`
 	Password       password   `json:"password"`
 	Chats          []userChat `json:"chats"`
+	First          bool       `json:"first"`
+	Lat            float64    `json:"lat"`
+	Lng            float64    `json:"lng"`
 }
 
 func (db *userRepository) CreateUser(user *model.NewUser) (*model.User, error) {
 	salt := GetSalt()
-	_, err := db.collection.InsertOne(context.TODO(), &UserSchema{
+	u := &UserSchema{
 		Email:          user.Email,
 		Nickname:       strings.ToLower(user.Nickname),
 		Name:           user.Name,
@@ -61,7 +65,12 @@ func (db *userRepository) CreateUser(user *model.NewUser) (*model.User, error) {
 			Hash: GetHash(salt, user.Password),
 			Salt: salt,
 		},
-	})
+		First:   true,
+		Picture: "",
+		Lat:     0,
+		Lng:     0,
+	}
+	_, err := db.collection.InsertOne(context.TODO(), user)
 	if err != nil {
 		return nil, errors.New("User '" + user.Nickname + "' already exists")
 	}
@@ -72,6 +81,9 @@ func (db *userRepository) CreateUser(user *model.NewUser) (*model.User, error) {
 		Followers:      make([]string, 0),
 		FollowersCount: 0,
 		Following:      make([]string, 0),
+		Picture:        u.Picture,
+		Lat:            u.Lat,
+		Lng:            u.Lng,
 	}, nil
 }
 
@@ -89,6 +101,9 @@ func (db *userRepository) FindOne(nickname string) (*model.User, error) {
 		Followers:      user.Followers,
 		FollowersCount: user.FollowersCount,
 		Following:      user.Following,
+		Picture:        user.Picture,
+		Lat:            user.Lat,
+		Lng:            user.Lng,
 	}, nil
 }
 
@@ -107,6 +122,9 @@ func (db *userRepository) FindAll() ([]*model.User, error) {
 			Followers:      u.Followers,
 			FollowersCount: u.FollowersCount,
 			Following:      u.Following,
+			Picture:        u.Picture,
+			Lat:            u.Lat,
+			Lng:            u.Lng,
 		})
 	}
 	return users, err
@@ -257,6 +275,16 @@ func (db *userRepository) UpdateProfilePicture(sender string, picture graphql.Up
 		return "", err
 	}
 	return newPictureURL, nil
+}
+
+func (db *userRepository) UpdateLocation(sender string, lat, lng float64) (bool, error) {
+	_, err := db.collection.UpdateOne(context.TODO(), bson.M{"_id": sender}, bson.M{
+		"$set": bson.M{"lat": lat, "lng": lng},
+	})
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 // NewUserRepository function

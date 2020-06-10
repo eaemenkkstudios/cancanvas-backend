@@ -6,6 +6,7 @@ import (
 	"errors"
 	"math/rand"
 
+	"github.com/eaemenkkstudios/cancanvas-backend/graph/model"
 	"github.com/eaemenkkstudios/cancanvas-backend/service"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -13,7 +14,7 @@ import (
 
 // AuthRepository interface
 type AuthRepository interface {
-	Login(username, password string) (string, error)
+	Login(username, password string) (*model.Login, error)
 }
 
 type authRespository struct {
@@ -40,19 +41,27 @@ func GetHash(salt, password string) string {
 	return string(hash[:])
 }
 
-func (db *authRespository) Login(username, password string) (string, error) {
+func (db *authRespository) Login(username, password string) (*model.Login, error) {
 	collection := db.client.Collection(CollectionUsers)
 	result := collection.FindOne(context.TODO(), bson.M{"_id": username})
 	var user *UserSchema
 	err := result.Decode(&user)
 	if err != nil {
-		return "", errors.New("Unauthorized")
+		return nil, errors.New("Unauthorized")
 	}
 	if pass := GetHash(user.Password.Salt, password); pass == user.Password.Hash {
 		token := service.NewJWTService().GenerateToken(username, false)
-		return token, nil
+		if user.First {
+			collection.UpdateOne(context.TODO(), bson.M{"_id": username}, bson.M{
+				"$set": bson.M{"first": false},
+			})
+		}
+		return &model.Login{
+			Token: token,
+			First: user.First,
+		}, nil
 	}
-	return "", errors.New("Unauthorized")
+	return nil, errors.New("Unauthorized")
 }
 
 // NewAuthRepository function
