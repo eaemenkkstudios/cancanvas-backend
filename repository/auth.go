@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"errors"
 	"math/rand"
+	"os"
 
 	"github.com/eaemenkkstudios/cancanvas-backend/graph/model"
 	"github.com/eaemenkkstudios/cancanvas-backend/service"
@@ -15,6 +16,7 @@ import (
 // AuthRepository interface
 type AuthRepository interface {
 	Login(username, password string) (*model.Login, error)
+	SendForgotPasswordEmail(user string) (bool, error)
 }
 
 type authRespository struct {
@@ -62,6 +64,28 @@ func (db *authRespository) Login(username, password string) (*model.Login, error
 		}, nil
 	}
 	return nil, errors.New("Unauthorized")
+}
+
+func (db *authRespository) SendForgotPasswordEmail(user string) (bool, error) {
+	collection := db.client.Collection(CollectionUsers)
+	result := collection.FindOne(context.TODO(), bson.M{"_id": user})
+	var u UserSchema
+	err := result.Decode(&u)
+	if err != nil {
+		return false, errors.New("User not found")
+	}
+	token := service.NewJWTService().GenerateResetPasswordToken(user)
+	serverURL := os.Getenv("SERVER_URL")
+	err = service.NewMailerService().SendMail(u.Email, "Hi,\n\n"+
+		"A password reset was request to the account associated with the cdias900@gmail.com email address, click the link bellow to change your password:\n"+
+		serverURL+"/resetpassword?token="+token+"\n"+
+		"If you didn't request this change, please ignore this email.\n\n"+
+		"Cancavas Team\n",
+	)
+	if err != nil {
+		return false, errors.New("Could not send email")
+	}
+	return true, nil
 }
 
 // NewAuthRepository function

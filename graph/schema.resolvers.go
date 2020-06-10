@@ -5,6 +5,7 @@ package graph
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/eaemenkkstudios/cancanvas-backend/graph/generated"
@@ -175,6 +176,14 @@ func (r *mutationResolver) AcceptBid(ctx context.Context, auctionID string, bidI
 		return false, err
 	}
 	return auctionRepository.AcceptBid(sender, auctionID, bidID)
+}
+
+func (r *mutationResolver) SendForgotPasswordEmail(ctx context.Context, nickname string) (bool, error) {
+	return authRepository.SendForgotPasswordEmail(nickname)
+}
+
+func (r *mutationResolver) ResetPassword(ctx context.Context, token string, newPassword string) (bool, error) {
+	panic(fmt.Errorf("not implemented"))
 }
 
 func (r *queryResolver) Users(ctx context.Context, nickname *string, page *int) ([]*model.User, error) {

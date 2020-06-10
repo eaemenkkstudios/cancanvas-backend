@@ -123,6 +123,8 @@ type Mutation {
   createAuction(offer: Float!, description: String!): Auction!
   createBid(auctionID: String!, deadline: String!, price: Float!): Bid!
   acceptBid(auctionID: String!, bidID: String!): Boolean!
+  sendForgotPasswordEmail(nickname: String!): Boolean!
+  resetPassword(token: String!, newPassword: String!): Boolean!
 }
 
 type Subscription {

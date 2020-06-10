@@ -14,6 +14,7 @@ import (
 // JWTService interface
 type JWTService interface {
 	GenerateToken(name string, admin bool) string
+	GenerateResetPasswordToken(name string) string
 	ValidateToken(tokenString string) (*jwt.Token, error)
 	GetClaimsFromToken(tokenString string) (map[string]interface{}, error)
 }
@@ -24,17 +25,15 @@ type jwtCustomClaims struct {
 	jwt.StandardClaims
 }
 
+type jwtResetPasswordCustomClaims struct {
+	Name  string `json:"name"`
+	Reset bool   `json:"admin"`
+	jwt.StandardClaims
+}
+
 type jwtService struct {
 	secretKey string
 	issuer    string
-}
-
-// NewJWTService function
-func NewJWTService() JWTService {
-	return &jwtService{
-		secretKey: getSecretKey(),
-		issuer:    "cancanvas",
-	}
 }
 
 func getSecretKey() string {
@@ -70,7 +69,6 @@ func (jwtSrv *jwtService) ValidateToken(tokenString string) (*jwt.Token, error) 
 		}
 		return []byte(jwtSrv.secretKey), nil
 	})
-
 }
 
 func (jwtSrv *jwtService) GetClaimsFromToken(tokenString string) (map[string]interface{}, error) {
@@ -79,4 +77,30 @@ func (jwtSrv *jwtService) GetClaimsFromToken(tokenString string) (map[string]int
 		return nil, errors.New("Could not validate token")
 	}
 	return result.Claims.(jwt.MapClaims), nil
+}
+
+func (jwtSrv *jwtService) GenerateResetPasswordToken(name string) string {
+	claims := &jwtResetPasswordCustomClaims{
+		Name:  name,
+		Reset: true,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(time.Hour * 24).Unix(),
+			Issuer:    jwtSrv.issuer,
+			IssuedAt:  time.Now().Unix(),
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	t, err := token.SignedString([]byte(jwtSrv.secretKey))
+	if err != nil {
+		panic(err)
+	}
+	return t
+}
+
+// NewJWTService function
+func NewJWTService() JWTService {
+	return &jwtService{
+		secretKey: getSecretKey(),
+		issuer:    "cancanvas",
+	}
 }
