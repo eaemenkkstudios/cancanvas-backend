@@ -70,7 +70,7 @@ func (db *userRepository) CreateUser(user *model.NewUser) (*model.User, error) {
 		Lat:     0,
 		Lng:     0,
 	}
-	_, err := db.collection.InsertOne(context.TODO(), user)
+	_, err := db.collection.InsertOne(context.TODO(), u)
 	if err != nil {
 		return nil, errors.New("User '" + user.Nickname + "' already exists")
 	}
@@ -78,9 +78,9 @@ func (db *userRepository) CreateUser(user *model.NewUser) (*model.User, error) {
 		Email:          user.Email,
 		Name:           user.Name,
 		Nickname:       user.Nickname,
-		Followers:      make([]string, 0),
-		FollowersCount: 0,
-		Following:      make([]string, 0),
+		Followers:      u.Followers,
+		FollowersCount: u.FollowersCount,
+		Following:      u.Following,
 		Picture:        u.Picture,
 		Lat:            u.Lat,
 		Lng:            u.Lng,
