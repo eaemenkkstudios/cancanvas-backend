@@ -21,7 +21,9 @@ type UserRepository interface {
 	Unfollow(sender, target string) (bool, error)
 	IsFollowing(sender, target string) bool
 	UpdateProfilePicture(sender string, picture graphql.Upload) (string, error)
+	UpdateCover(sender string, cover graphql.Upload) (string, error)
 	UpdateLocation(sender string, lat, lng float64) (bool, error)
+	UpdateBio(sender, bio string) (bool, error)
 }
 
 type userRepository struct {
@@ -41,6 +43,8 @@ type UserSchema struct {
 	Name           string     `json:"name"`
 	Email          string     `json:"email"`
 	Picture        string     `json:"picture"`
+	Cover          string     `json:"cover"`
+	Bio            string     `json:"bio"`
 	Followers      []string   `json:"followers"`
 	FollowersCount int        `json:"followerscount"`
 	Following      []string   `json:"following"`
@@ -61,14 +65,16 @@ func (db *userRepository) CreateUser(user *model.NewUser) (*model.User, error) {
 		FollowersCount: 0,
 		Followers:      make([]string, 0),
 		Chats:          make([]userChat, 0),
+		First:          true,
+		Picture:        "",
+		Cover:          "",
+		Bio:            "",
+		Lat:            0,
+		Lng:            0,
 		Password: password{
 			Hash: GetHash(salt, user.Password),
 			Salt: salt,
 		},
-		First:   true,
-		Picture: "",
-		Lat:     0,
-		Lng:     0,
 	}
 	_, err := db.collection.InsertOne(context.TODO(), u)
 	if err != nil {
@@ -82,6 +88,8 @@ func (db *userRepository) CreateUser(user *model.NewUser) (*model.User, error) {
 		FollowersCount: u.FollowersCount,
 		Following:      u.Following,
 		Picture:        u.Picture,
+		Cover:          u.Cover,
+		Bio:            u.Bio,
 		Lat:            u.Lat,
 		Lng:            u.Lng,
 	}, nil
@@ -102,6 +110,8 @@ func (db *userRepository) FindOne(nickname string) (*model.User, error) {
 		FollowersCount: user.FollowersCount,
 		Following:      user.Following,
 		Picture:        user.Picture,
+		Cover:          user.Cover,
+		Bio:            user.Bio,
 		Lat:            user.Lat,
 		Lng:            user.Lng,
 	}, nil
@@ -123,6 +133,8 @@ func (db *userRepository) FindAll() ([]*model.User, error) {
 			FollowersCount: u.FollowersCount,
 			Following:      u.Following,
 			Picture:        u.Picture,
+			Cover:          u.Cover,
+			Bio:            u.Bio,
 			Lat:            u.Lat,
 			Lng:            u.Lng,
 		})
@@ -285,6 +297,43 @@ func (db *userRepository) UpdateLocation(sender string, lat, lng float64) (bool,
 		return false, err
 	}
 	return true, nil
+}
+
+func (db *userRepository) UpdateBio(sender, bio string) (bool, error) {
+	_, err := db.collection.UpdateOne(context.TODO(), bson.M{"_id": sender}, bson.M{
+		"$set": bson.M{"bio": bio},
+	})
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+func (db *userRepository) UpdateCover(sender string, cover graphql.Upload) (string, error) {
+	result := db.collection.FindOne(context.TODO(), bson.M{"_id": sender})
+	var user UserSchema
+	err := result.Decode(&user)
+	if err != nil {
+		return "", errors.New("User not found")
+	}
+	newPictureURL, err := db.awsSession.UploadFile(cover, "cover")
+	if err != nil {
+		return "", err
+	}
+	urlPrefix := db.awsSession.GetURLPrefix()
+	if user.Picture != "" {
+		_, err := db.awsSession.DeleteFile(strings.TrimPrefix(user.Picture, urlPrefix))
+		if err != nil {
+			return "", err
+		}
+	}
+	_, err = db.collection.UpdateOne(context.TODO(), bson.M{"_id": sender}, bson.M{
+		"$set": bson.M{"cover": newPictureURL},
+	})
+	if err != nil {
+		return "", err
+	}
+	return newPictureURL, nil
 }
 
 // NewUserRepository function

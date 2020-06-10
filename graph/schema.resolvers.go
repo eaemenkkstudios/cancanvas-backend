@@ -41,6 +41,22 @@ func (r *mutationResolver) UpdateUserLocation(ctx context.Context, lat float64, 
 	return userRepository.UpdateLocation(sender, lat, lng)
 }
 
+func (r *mutationResolver) UpdateUserBio(ctx context.Context, bio string) (bool, error) {
+	sender, err := utils.GetSenderFromTokenHTTP(ctx)
+	if err != nil {
+		return false, err
+	}
+	return userRepository.UpdateBio(sender, bio)
+}
+
+func (r *mutationResolver) UpdateUserCover(ctx context.Context, cover graphql.Upload) (string, error) {
+	sender, err := utils.GetSenderFromTokenHTTP(ctx)
+	if err != nil {
+		return "", err
+	}
+	return userRepository.UpdateCover(sender, cover)
+}
+
 func (r *mutationResolver) AddTagToUser(ctx context.Context, tag string) (bool, error) {
 	sender, err := utils.GetSenderFromTokenHTTP(ctx)
 	if err != nil {

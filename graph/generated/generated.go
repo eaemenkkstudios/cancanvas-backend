@@ -114,6 +114,8 @@ type ComplexityRoot struct {
 		SendMessage             func(childComplexity int, msg string, receiver string) int
 		SendMessageToDialogflow func(childComplexity int, msg string) int
 		Unfollow                func(childComplexity int, nickname string) int
+		UpdateUserBio           func(childComplexity int, bio string) int
+		UpdateUserCover         func(childComplexity int, cover graphql.Upload) int
 		UpdateUserLocation      func(childComplexity int, lat float64, lng float64) int
 		UpdateUserPicture       func(childComplexity int, picture graphql.Upload) int
 	}
@@ -148,6 +150,8 @@ type ComplexityRoot struct {
 	}
 
 	User struct {
+		Bio            func(childComplexity int) int
+		Cover          func(childComplexity int) int
 		Email          func(childComplexity int) int
 		Followers      func(childComplexity int) int
 		FollowersCount func(childComplexity int) int
@@ -164,6 +168,8 @@ type MutationResolver interface {
 	CreateUser(ctx context.Context, input model.NewUser) (*model.User, error)
 	UpdateUserPicture(ctx context.Context, picture graphql.Upload) (string, error)
 	UpdateUserLocation(ctx context.Context, lat float64, lng float64) (bool, error)
+	UpdateUserBio(ctx context.Context, bio string) (bool, error)
+	UpdateUserCover(ctx context.Context, cover graphql.Upload) (string, error)
 	AddTagToUser(ctx context.Context, tag string) (bool, error)
 	RemoveTagFromUser(ctx context.Context, tag string) (bool, error)
 	Follow(ctx context.Context, nickname string) (bool, error)
@@ -614,6 +620,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.Unfollow(childComplexity, args["nickname"].(string)), true
 
+	case "Mutation.updateUserBio":
+		if e.complexity.Mutation.UpdateUserBio == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateUserBio_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateUserBio(childComplexity, args["bio"].(string)), true
+
+	case "Mutation.updateUserCover":
+		if e.complexity.Mutation.UpdateUserCover == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateUserCover_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateUserCover(childComplexity, args["cover"].(graphql.Upload)), true
+
 	case "Mutation.updateUserLocation":
 		if e.complexity.Mutation.UpdateUserLocation == nil {
 			break
@@ -817,6 +847,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Subscription.NewChatMessage(childComplexity), true
+
+	case "User.bio":
+		if e.complexity.User.Bio == nil {
+			break
+		}
+
+		return e.complexity.User.Bio(childComplexity), true
+
+	case "User.cover":
+		if e.complexity.User.Cover == nil {
+			break
+		}
+
+		return e.complexity.User.Cover(childComplexity), true
 
 	case "User.email":
 		if e.complexity.User.Email == nil {
@@ -1030,7 +1074,9 @@ type User {
   nickname: String!
   name: String!
   email: String!
+  bio: String!
   picture: String!
+  cover: String!
   followers: [String!]!
   followersCount: Int!
   following: [String!]!
@@ -1068,6 +1114,8 @@ type Mutation {
   createUser(input: NewUser!): User!
   updateUserPicture(picture: Upload!): String!
   updateUserLocation(lat: Float!, lng: Float!): Boolean!
+  updateUserBio(bio: String!): Boolean!
+  updateUserCover(cover: Upload!): String!
   addTagToUser(tag: String!): Boolean!
   removeTagFromUser(tag: String!): Boolean!
   follow(nickname: String!): Boolean!
@@ -1388,6 +1436,34 @@ func (ec *executionContext) field_Mutation_unfollow_args(ctx context.Context, ra
 		}
 	}
 	args["nickname"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateUserBio_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["bio"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["bio"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateUserCover_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 graphql.Upload
+	if tmp, ok := rawArgs["cover"]; ok {
+		arg0, err = ec.unmarshalNUpload2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["cover"] = arg0
 	return args, nil
 }
 
@@ -2754,6 +2830,88 @@ func (ec *executionContext) _Mutation_updateUserLocation(ctx context.Context, fi
 	res := resTmp.(bool)
 	fc.Result = res
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_updateUserBio(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_updateUserBio_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateUserBio(rctx, args["bio"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_updateUserCover(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_updateUserCover_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateUserCover(rctx, args["cover"].(graphql.Upload))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_addTagToUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -4285,6 +4443,40 @@ func (ec *executionContext) _User_email(ctx context.Context, field graphql.Colle
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _User_bio(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "User",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Bio, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _User_picture(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -4303,6 +4495,40 @@ func (ec *executionContext) _User_picture(ctx context.Context, field graphql.Col
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Picture, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _User_cover(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "User",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cover, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5922,6 +6148,16 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "updateUserBio":
+			out.Values[i] = ec._Mutation_updateUserBio(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "updateUserCover":
+			out.Values[i] = ec._Mutation_updateUserCover(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "addTagToUser":
 			out.Values[i] = ec._Mutation_addTagToUser(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -6297,8 +6533,18 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "bio":
+			out.Values[i] = ec._User_bio(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "picture":
 			out.Values[i] = ec._User_picture(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "cover":
+			out.Values[i] = ec._User_cover(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

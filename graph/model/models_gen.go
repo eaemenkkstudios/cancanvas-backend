@@ -79,7 +79,9 @@ type User struct {
 	Nickname       string   `json:"nickname"`
 	Name           string   `json:"name"`
 	Email          string   `json:"email"`
+	Bio            string   `json:"bio"`
 	Picture        string   `json:"picture"`
+	Cover          string   `json:"cover"`
 	Followers      []string `json:"followers"`
 	FollowersCount int      `json:"followersCount"`
 	Following      []string `json:"following"`
