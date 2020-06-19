@@ -33,11 +33,6 @@ type userRepository struct {
 	collection *mongo.Collection
 }
 
-type password struct {
-	Hash string `json:"hash"`
-	Salt string `json:"salt"`
-}
-
 // UserSchema struct
 type UserSchema struct {
 	Nickname       string     `json:"nickname" bson:"_id"`
@@ -49,7 +44,7 @@ type UserSchema struct {
 	Followers      []string   `json:"followers"`
 	FollowersCount int        `json:"followerscount"`
 	Following      []string   `json:"following"`
-	Password       password   `json:"password"`
+	Password       Password   `json:"password"`
 	Chats          []userChat `json:"chats"`
 	First          bool       `json:"first"`
 	Lat            float64    `json:"lat"`
@@ -57,7 +52,6 @@ type UserSchema struct {
 }
 
 func (db *userRepository) CreateUser(user *model.NewUser) (*model.User, error) {
-	salt := GetSalt()
 	u := &UserSchema{
 		Email:          user.Email,
 		Nickname:       strings.ToLower(user.Nickname),
@@ -72,10 +66,7 @@ func (db *userRepository) CreateUser(user *model.NewUser) (*model.User, error) {
 		Bio:            "",
 		Lat:            0,
 		Lng:            0,
-		Password: password{
-			Hash: GetHash(salt, user.Password),
-			Salt: salt,
-		},
+		Password:       GeneratePassword(user.Password),
 	}
 	_, err := db.collection.InsertOne(context.TODO(), u)
 	if err != nil {

@@ -142,13 +142,16 @@ type Mutation {
   sendMessage(msg: String!, receiver: String!): Boolean!
   sendMessageToDialogflow(msg: String!): String!
   createPost(content: Upload!, description: String): String!
+  editPost(postID: String!, description: String!): Boolean!
   deletePost(postID: String!): Boolean!
   likeComment(postID: String!, commentID: String!): Boolean!
   likePost(postID: String!): Boolean!
   commentOnPost(postID: String!, message: String!): String!
   deleteComment(postID: String!, commentID: String!): Boolean!
   createAuction(offer: Float!, description: String!): Auction!
+  deleteAuction(auctionID: String!): Boolean!
   createBid(auctionID: String!, deadline: String!, price: Float!): Bid!
+  deleteBid(auctionID: String!, bidID: String!): Boolean!
   acceptBid(auctionID: String!, bidID: String!): Boolean!
   sendForgotPasswordEmail(nickname: String!): Boolean!
   resetPassword(token: String!, newPassword: String!): Boolean!

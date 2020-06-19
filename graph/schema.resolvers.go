@@ -14,6 +14,14 @@ import (
 	"github.com/eaemenkkstudios/cancanvas-backend/utils"
 )
 
+var userRepository = repository.NewUserRepository()
+var authRepository = repository.NewAuthRepository()
+var chatRepository = repository.NewChatRepository()
+var postRepository = repository.NewPostRepository()
+var feedRepository = repository.NewFeedRepository()
+var tagsRepository = repository.NewTagsRepository()
+var auctionRepository = repository.NewAuctionRepository()
+
 func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) (*model.User, error) {
 	return userRepository.CreateUser(&input)
 }
@@ -106,6 +114,10 @@ func (r *mutationResolver) CreatePost(ctx context.Context, content graphql.Uploa
 	return postRepository.CreatePost(author, content, description)
 }
 
+func (r *mutationResolver) EditPost(ctx context.Context, postID string, description string) (bool, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
 func (r *mutationResolver) DeletePost(ctx context.Context, postID string) (bool, error) {
 	sender, err := utils.GetSenderFromTokenHTTP(ctx)
 	if err != nil {
@@ -154,12 +166,28 @@ func (r *mutationResolver) CreateAuction(ctx context.Context, offer float64, des
 	return auctionRepository.CreateAuction(sender, description, offer)
 }
 
+func (r *mutationResolver) DeleteAuction(ctx context.Context, auctionID string) (bool, error) {
+	sender, err := utils.GetSenderFromTokenHTTP(ctx)
+	if err != nil {
+		return false, err
+	}
+	return auctionRepository.DeleteAuction(sender, auctionID)
+}
+
 func (r *mutationResolver) CreateBid(ctx context.Context, auctionID string, deadline string, price float64) (*model.Bid, error) {
 	sender, err := utils.GetSenderFromTokenHTTP(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return auctionRepository.CreateBid(sender, auctionID, deadline, price)
+}
+
+func (r *mutationResolver) DeleteBid(ctx context.Context, auctionID string, bidID string) (bool, error) {
+	sender, err := utils.GetSenderFromTokenHTTP(ctx)
+	if err != nil {
+		return false, err
+	}
+	return auctionRepository.DeleteBid(sender, auctionID, bidID)
 }
 
 func (r *mutationResolver) AcceptBid(ctx context.Context, auctionID string, bidID string) (bool, error) {
@@ -175,7 +203,11 @@ func (r *mutationResolver) SendForgotPasswordEmail(ctx context.Context, nickname
 }
 
 func (r *mutationResolver) ResetPassword(ctx context.Context, token string, newPassword string) (bool, error) {
-	panic(fmt.Errorf("not implemented"))
+	sender, hash, err := utils.GetSenderAndHashFromToken(token)
+	if err != nil {
+		return false, err
+	}
+	return authRepository.ResetPassword(sender, hash, newPassword)
 }
 
 func (r *queryResolver) Users(ctx context.Context, nickname *string, page *int) ([]*model.User, error) {
@@ -266,17 +298,3 @@ func (r *Resolver) Subscription() generated.SubscriptionResolver { return &subsc
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type subscriptionResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//    it when you're done.
-//  - You have helper methods in this file. Move them out to keep these resolver files clean.
-var userRepository = repository.NewUserRepository()
-var authRepository = repository.NewAuthRepository()
-var chatRepository = repository.NewChatRepository()
-var postRepository = repository.NewPostRepository()
-var feedRepository = repository.NewFeedRepository()
-var tagsRepository = repository.NewTagsRepository()
-var auctionRepository = repository.NewAuctionRepository()

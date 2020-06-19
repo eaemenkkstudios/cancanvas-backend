@@ -132,8 +132,11 @@ type ComplexityRoot struct {
 		CreateBid               func(childComplexity int, auctionID string, deadline string, price float64) int
 		CreatePost              func(childComplexity int, content graphql.Upload, description *string) int
 		CreateUser              func(childComplexity int, input model.NewUser) int
+		DeleteAuction           func(childComplexity int, auctionID string) int
+		DeleteBid               func(childComplexity int, auctionID string, bidID string) int
 		DeleteComment           func(childComplexity int, postID string, commentID string) int
 		DeletePost              func(childComplexity int, postID string) int
+		EditPost                func(childComplexity int, postID string, description string) int
 		Follow                  func(childComplexity int, nickname string) int
 		LikeComment             func(childComplexity int, postID string, commentID string) int
 		LikePost                func(childComplexity int, postID string) int
@@ -206,13 +209,16 @@ type MutationResolver interface {
 	SendMessage(ctx context.Context, msg string, receiver string) (bool, error)
 	SendMessageToDialogflow(ctx context.Context, msg string) (string, error)
 	CreatePost(ctx context.Context, content graphql.Upload, description *string) (string, error)
+	EditPost(ctx context.Context, postID string, description string) (bool, error)
 	DeletePost(ctx context.Context, postID string) (bool, error)
 	LikeComment(ctx context.Context, postID string, commentID string) (bool, error)
 	LikePost(ctx context.Context, postID string) (bool, error)
 	CommentOnPost(ctx context.Context, postID string, message string) (string, error)
 	DeleteComment(ctx context.Context, postID string, commentID string) (bool, error)
 	CreateAuction(ctx context.Context, offer float64, description string) (*model.Auction, error)
+	DeleteAuction(ctx context.Context, auctionID string) (bool, error)
 	CreateBid(ctx context.Context, auctionID string, deadline string, price float64) (*model.Bid, error)
+	DeleteBid(ctx context.Context, auctionID string, bidID string) (bool, error)
 	AcceptBid(ctx context.Context, auctionID string, bidID string) (bool, error)
 	SendForgotPasswordEmail(ctx context.Context, nickname string) (bool, error)
 	ResetPassword(ctx context.Context, token string, newPassword string) (bool, error)
@@ -669,6 +675,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.CreateUser(childComplexity, args["input"].(model.NewUser)), true
 
+	case "Mutation.deleteAuction":
+		if e.complexity.Mutation.DeleteAuction == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteAuction_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteAuction(childComplexity, args["auctionID"].(string)), true
+
+	case "Mutation.deleteBid":
+		if e.complexity.Mutation.DeleteBid == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteBid_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteBid(childComplexity, args["auctionID"].(string), args["bidID"].(string)), true
+
 	case "Mutation.deleteComment":
 		if e.complexity.Mutation.DeleteComment == nil {
 			break
@@ -692,6 +722,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeletePost(childComplexity, args["postID"].(string)), true
+
+	case "Mutation.editPost":
+		if e.complexity.Mutation.EditPost == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_editPost_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.EditPost(childComplexity, args["postID"].(string), args["description"].(string)), true
 
 	case "Mutation.follow":
 		if e.complexity.Mutation.Follow == nil {
@@ -1336,13 +1378,16 @@ type Mutation {
   sendMessage(msg: String!, receiver: String!): Boolean!
   sendMessageToDialogflow(msg: String!): String!
   createPost(content: Upload!, description: String): String!
+  editPost(postID: String!, description: String!): Boolean!
   deletePost(postID: String!): Boolean!
   likeComment(postID: String!, commentID: String!): Boolean!
   likePost(postID: String!): Boolean!
   commentOnPost(postID: String!, message: String!): String!
   deleteComment(postID: String!, commentID: String!): Boolean!
   createAuction(offer: Float!, description: String!): Auction!
+  deleteAuction(auctionID: String!): Boolean!
   createBid(auctionID: String!, deadline: String!, price: Float!): Bid!
+  deleteBid(auctionID: String!, bidID: String!): Boolean!
   acceptBid(auctionID: String!, bidID: String!): Boolean!
   sendForgotPasswordEmail(nickname: String!): Boolean!
   resetPassword(token: String!, newPassword: String!): Boolean!
@@ -1504,6 +1549,42 @@ func (ec *executionContext) field_Mutation_createUser_args(ctx context.Context, 
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_deleteAuction_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["auctionID"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["auctionID"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteBid_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["auctionID"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["auctionID"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["bidID"]; ok {
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["bidID"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_deleteComment_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -1537,6 +1618,28 @@ func (ec *executionContext) field_Mutation_deletePost_args(ctx context.Context, 
 		}
 	}
 	args["postID"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_editPost_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["postID"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["postID"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["description"]; ok {
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["description"] = arg1
 	return args, nil
 }
 
@@ -4083,6 +4186,47 @@ func (ec *executionContext) _Mutation_createPost(ctx context.Context, field grap
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_editPost(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_editPost_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().EditPost(rctx, args["postID"].(string), args["description"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Mutation_deletePost(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -4329,6 +4473,47 @@ func (ec *executionContext) _Mutation_createAuction(ctx context.Context, field g
 	return ec.marshalNAuction2ᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐAuction(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_deleteAuction(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_deleteAuction_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteAuction(rctx, args["auctionID"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Mutation_createBid(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -4368,6 +4553,47 @@ func (ec *executionContext) _Mutation_createBid(ctx context.Context, field graph
 	res := resTmp.(*model.Bid)
 	fc.Result = res
 	return ec.marshalNBid2ᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐBid(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_deleteBid(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_deleteBid_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteBid(rctx, args["auctionID"].(string), args["bidID"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_acceptBid(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -7317,6 +7543,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "editPost":
+			out.Values[i] = ec._Mutation_editPost(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "deletePost":
 			out.Values[i] = ec._Mutation_deletePost(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -7347,8 +7578,18 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "deleteAuction":
+			out.Values[i] = ec._Mutation_deleteAuction(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "createBid":
 			out.Values[i] = ec._Mutation_createBid(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "deleteBid":
+			out.Values[i] = ec._Mutation_deleteBid(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

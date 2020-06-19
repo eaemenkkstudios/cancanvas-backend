@@ -29,6 +29,15 @@ func GetSenderFromTokenSocket(ctx context.Context) (string, error) {
 	return getSenderFromClaims(token)
 }
 
+// GetSenderAndHashFromToken function
+func GetSenderAndHashFromToken(token string) (sender string, hash string, err error) {
+	claims, err := jwtService.GetClaimsFromToken(token)
+	if err != nil {
+		return "", "", errors.New("Invalid or expired token")
+	}
+	return fmt.Sprintf("%v", claims["name"]), fmt.Sprintf("%v", claims["hash"]), nil
+}
+
 func getSenderFromClaims(token string) (string, error) {
 	claims, err := jwtService.GetClaimsFromToken(token)
 	if err != nil {

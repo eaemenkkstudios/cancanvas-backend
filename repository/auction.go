@@ -15,13 +15,25 @@ import (
 type AuctionRepository interface {
 	GetAuctions(page *int) ([]*model.FeedAuction, error)
 	CreateAuction(sender, description string, offer float64) (*model.Auction, error)
+	DeleteAuction(sender, auctionID string) (bool, error)
 	CreateBid(sender, auctionID, deadline string, price float64) (*model.Bid, error)
+	DeleteBid(sender, auctionID, bidID string) (bool, error)
 	AcceptBid(sender, auctionID, bidID string) (bool, error)
 	AcceptedBids(sender string) ([]*model.FeedAuction, error)
 }
 
 type auctionRepository struct {
 	client *mongo.Database
+}
+
+type feedAuction struct {
+	ID          string        `bson:"_id"`
+	Host        []*UserSchema `bson:"host"`
+	Description string        `bson:"description"`
+	Offer       float64       `bson:"offer"`
+	Bids        []*model.Bid  `bson:"bids"`
+	Timestamp   time.Time     `bson:"timestamp"`
+	Deadline    time.Time     `bson:"deadline"`
 }
 
 func (db *auctionRepository) CreateAuction(sender, description string, offer float64) (*model.Auction, error) {
@@ -43,14 +55,20 @@ func (db *auctionRepository) CreateAuction(sender, description string, offer flo
 	return auction, nil
 }
 
-type feedAuction struct {
-	ID          string        `bson:"_id"`
-	Host        []*UserSchema `bson:"host"`
-	Description string        `bson:"description"`
-	Offer       float64       `bson:"offer"`
-	Bids        []*model.Bid  `bson:"bids"`
-	Timestamp   time.Time     `bson:"timestamp"`
-	Deadline    time.Time     `bson:"deadline"`
+func (db *auctionRepository) DeleteAuction(sender, auctionID string) (bool, error) {
+	collection := db.client.Collection(CollectionAuctions)
+	id, err := primitive.ObjectIDFromHex(auctionID)
+	if err != nil {
+		return false, errors.New("Invalid auctionID")
+	}
+	result, err := collection.DeleteOne(context.TODO(), bson.M{"_id": id, "host": sender})
+	if err != nil {
+		return false, err
+	}
+	if result.DeletedCount == 0 {
+		return false, errors.New("Could not delete auction")
+	}
+	return true, nil
 }
 
 func (db *auctionRepository) GetAuctions(page *int) ([]*model.FeedAuction, error) {
@@ -134,6 +152,38 @@ func (db *auctionRepository) CreateBid(sender, auctionID, deadline string, price
 		return nil, errors.New("Unexpected error")
 	}
 	return bid, nil
+}
+
+func (db *auctionRepository) DeleteBid(sender, auctionID, bidID string) (bool, error) {
+	collection := db.client.Collection(CollectionAuctions)
+	id, err := primitive.ObjectIDFromHex(auctionID)
+	if err != nil {
+		return false, errors.New("Invalid auctionID")
+	}
+	result := collection.FindOne(context.TODO(), bson.M{"_id": id})
+	var auction model.Auction
+	err = result.Decode(&auction)
+	if err != nil {
+		return false, err
+	}
+	deleted := false
+	for i, b := range auction.Bids {
+		if b.ID == bidID && b.Issuer == sender && !b.Selected {
+			auction.Bids = append(auction.Bids[:i], auction.Bids[i+1:]...)
+			deleted = true
+			break
+		}
+	}
+	if !deleted {
+		return false, errors.New("Could not delete bid")
+	}
+	_, err = collection.UpdateOne(context.TODO(), bson.M{"_id": id}, bson.M{
+		"$set": bson.M{"Bids": auction.Bids},
+	})
+	if err != nil {
+		return false, errors.New("Could not delete bid")
+	}
+	return true, nil
 }
 
 func (db *auctionRepository) AcceptBid(sender, auctionID, bidID string) (bool, error) {
