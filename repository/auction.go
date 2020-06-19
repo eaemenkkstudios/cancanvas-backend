@@ -146,7 +146,7 @@ func (db *auctionRepository) CreateBid(sender, auctionID, deadline string, price
 		Timestamp: time.Now(),
 	}
 	_, err = collection.UpdateOne(context.TODO(), bson.M{"_id": id}, bson.M{
-		"$push": bson.M{"Bids": bid},
+		"$push": bson.M{"bids": bid},
 	})
 	if err != nil {
 		return nil, errors.New("Unexpected error")
@@ -178,7 +178,7 @@ func (db *auctionRepository) DeleteBid(sender, auctionID, bidID string) (bool, e
 		return false, errors.New("Could not delete bid")
 	}
 	_, err = collection.UpdateOne(context.TODO(), bson.M{"_id": id}, bson.M{
-		"$set": bson.M{"Bids": auction.Bids},
+		"$set": bson.M{"bids": auction.Bids},
 	})
 	if err != nil {
 		return false, errors.New("Could not delete bid")

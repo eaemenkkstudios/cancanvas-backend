@@ -5,7 +5,6 @@ package graph
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/eaemenkkstudios/cancanvas-backend/graph/generated"
@@ -115,7 +114,11 @@ func (r *mutationResolver) CreatePost(ctx context.Context, content graphql.Uploa
 }
 
 func (r *mutationResolver) EditPost(ctx context.Context, postID string, description string) (bool, error) {
-	panic(fmt.Errorf("not implemented"))
+	author, err := utils.GetSenderFromTokenHTTP(ctx)
+	if err != nil {
+		return false, err
+	}
+	return postRepository.EditPost(author, postID, description)
 }
 
 func (r *mutationResolver) DeletePost(ctx context.Context, postID string) (bool, error) {

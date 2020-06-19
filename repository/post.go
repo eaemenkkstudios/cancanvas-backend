@@ -19,6 +19,7 @@ import (
 type PostRepository interface {
 	GetPosts(author string, page *int) ([]*model.Post, error)
 	CreatePost(author string, content graphql.Upload, description *string) (string, error)
+	EditPost(author, postID, description string) (bool, error)
 	DeletePost(author, postID string) (bool, error)
 	LikePost(sender, postID string) (bool, error)
 	CommentOnPost(sender, postID, message string) (string, error)
@@ -84,6 +85,24 @@ func (db *postRepository) CreatePost(author string, content graphql.Upload, desc
 		return "", errors.New("Could not create post")
 	}
 	return result.InsertedID.(primitive.ObjectID).Hex(), nil
+}
+
+func (db *postRepository) EditPost(author, postID, description string) (bool, error) {
+	if description == "" {
+		return false, errors.New("Could not edit post")
+	}
+	collection := db.client.Collection(CollectionPosts)
+	id, err := primitive.ObjectIDFromHex(postID)
+	if err != nil {
+		return false, errors.New("Invalid postID")
+	}
+	result, err := collection.UpdateOne(context.TODO(), bson.M{"_id": id, "author": author}, bson.M{
+		"$set": bson.M{"description": description},
+	})
+	if err != nil || result.ModifiedCount == 0 {
+		return false, errors.New("Could not edit post")
+	}
+	return true, nil
 }
 
 func (db *postRepository) DeletePost(author, postID string) (bool, error) {
