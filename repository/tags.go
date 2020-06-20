@@ -12,6 +12,7 @@ import (
 
 // TagsRepository interface
 type TagsRepository interface {
+	GetTags() ([]string, error)
 	GetUsersPerTags(tags []string, page *int) ([]*model.User, error)
 	AddTagToUser(user, tag string) (bool, error)
 	RemoveTagFromUser(user, tag string) (bool, error)
@@ -23,8 +24,25 @@ type tagsRepository struct {
 
 // TagSchema struct
 type TagSchema struct {
-	ID    string   `json:"_id"`
+	ID    string   `json:"_id" bson:"_id"`
 	Users []string `json:"users"`
+}
+
+func (db *tagsRepository) GetTags() ([]string, error) {
+	collection := db.client.Collection(CollectionTags)
+	ctx := context.TODO()
+	cursor, err := collection.Find(ctx, bson.M{})
+	if err != nil {
+		return nil, errors.New("Could not get tags")
+	}
+	tags := make([]string, 0)
+	var t TagSchema
+	defer cursor.Close(ctx)
+	for cursor.Next(ctx) {
+		err = cursor.Decode(&t)
+		tags = append(tags, t.ID)
+	}
+	return tags, err
 }
 
 func (db *tagsRepository) GetUsersPerTags(tags []string, page *int) ([]*model.User, error) {

@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 
 	dialogflow "cloud.google.com/go/dialogflow/apiv2"
@@ -47,7 +48,7 @@ func NewDialogflowService() DialogflowService {
 		option.WithCredentialsJSON([]byte(serviceAccount)),
 	)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	return &dialogflowService{
 		sessionsClient,

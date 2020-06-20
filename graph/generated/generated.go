@@ -169,6 +169,7 @@ type ComplexityRoot struct {
 		IsFollowing  func(childComplexity int, nickname string) int
 		Login        func(childComplexity int, nickname string, password string) int
 		Self         func(childComplexity int) int
+		Tags         func(childComplexity int) int
 		Trending     func(childComplexity int, page *int) int
 		User         func(childComplexity int, nickname string) int
 		UserPosts    func(childComplexity int, nickname string, page *int) int
@@ -229,6 +230,7 @@ type QueryResolver interface {
 	Trending(ctx context.Context, page *int) ([]*model.FeedPost, error)
 	User(ctx context.Context, nickname string) (*model.User, error)
 	UserPosts(ctx context.Context, nickname string, page *int) ([]*model.Post, error)
+	Tags(ctx context.Context) ([]string, error)
 	UsersByTags(ctx context.Context, tags []string, page *int) ([]*model.User, error)
 	Auctions(ctx context.Context, page *int) ([]*model.FeedAuction, error)
 	Login(ctx context.Context, nickname string, password string) (*model.Login, error)
@@ -1008,6 +1010,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Self(childComplexity), true
 
+	case "Query.tags":
+		if e.complexity.Query.Tags == nil {
+			break
+		}
+
+		return e.complexity.Query.Tags(childComplexity), true
+
 	case "Query.trending":
 		if e.complexity.Query.Trending == nil {
 			break
@@ -1350,6 +1359,7 @@ type Query {
   trending(page: Int = 1): [FeedPost!]!
   user(nickname: String!): User!
   userPosts(nickname: String!, page: Int = 1): [Post!]!
+  tags: [String!]!
   usersByTags(tags: [String!]!, page: Int = 1): [User!]!
   auctions(page: Int = 1): [FeedAuction!]!
   login(nickname: String!, password: String!): Login!
@@ -5226,6 +5236,40 @@ func (ec *executionContext) _Query_userPosts(ctx context.Context, field graphql.
 	return ec.marshalNPost2ᚕᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐPostᚄ(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_tags(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Tags(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_usersByTags(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -7771,6 +7815,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_userPosts(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "tags":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_tags(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
