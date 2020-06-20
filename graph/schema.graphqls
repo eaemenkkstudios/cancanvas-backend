@@ -116,6 +116,7 @@ type Query {
   user(nickname: String!): User!
   userPosts(nickname: String!, page: Int = 1): [Post!]!
   tags: [String!]!
+  userTags(nickname: String!): [String!]!
   usersByTags(tags: [String!]!, page: Int = 1): [User!]!
   auctions(page: Int = 1): [FeedAuction!]!
   login(nickname: String!, password: String!): Login!

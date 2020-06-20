@@ -257,6 +257,10 @@ func (r *queryResolver) Tags(ctx context.Context) ([]string, error) {
 	return tagsRepository.GetTags()
 }
 
+func (r *queryResolver) UserTags(ctx context.Context, nickname string) ([]string, error) {
+	return tagsRepository.GetUserTags(nickname)
+}
+
 func (r *queryResolver) UsersByTags(ctx context.Context, tags []string, page *int) ([]*model.User, error) {
 	return tagsRepository.GetUsersPerTags(tags, page)
 }

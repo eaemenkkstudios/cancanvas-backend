@@ -13,6 +13,7 @@ import (
 // TagsRepository interface
 type TagsRepository interface {
 	GetTags() ([]string, error)
+	GetUserTags(nickname string) ([]string, error)
 	GetUsersPerTags(tags []string, page *int) ([]*model.User, error)
 	AddTagToUser(user, tag string) (bool, error)
 	RemoveTagFromUser(user, tag string) (bool, error)
@@ -39,6 +40,23 @@ func (db *tagsRepository) GetTags() ([]string, error) {
 	var t TagSchema
 	defer cursor.Close(ctx)
 	for cursor.Next(ctx) {
+		err = cursor.Decode(&t)
+		tags = append(tags, t.ID)
+	}
+	return tags, err
+}
+
+func (db *tagsRepository) GetUserTags(nickname string) ([]string, error) {
+	collection := db.client.Collection(CollectionTags)
+	ctx := context.TODO()
+	cursor, err := collection.Find(ctx, bson.M{"users": bson.M{"$in": []string{nickname}}})
+	if err != nil {
+		return nil, errors.New("Could not get user tags")
+	}
+	defer cursor.Close(ctx)
+	tags := make([]string, 0)
+	for cursor.Next(ctx) {
+		var t TagSchema
 		err = cursor.Decode(&t)
 		tags = append(tags, t.ID)
 	}

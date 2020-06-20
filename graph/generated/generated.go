@@ -173,6 +173,7 @@ type ComplexityRoot struct {
 		Trending     func(childComplexity int, page *int) int
 		User         func(childComplexity int, nickname string) int
 		UserPosts    func(childComplexity int, nickname string, page *int) int
+		UserTags     func(childComplexity int, nickname string) int
 		Users        func(childComplexity int, nickname *string, page *int) int
 		UsersByTags  func(childComplexity int, tags []string, page *int) int
 	}
@@ -231,6 +232,7 @@ type QueryResolver interface {
 	User(ctx context.Context, nickname string) (*model.User, error)
 	UserPosts(ctx context.Context, nickname string, page *int) ([]*model.Post, error)
 	Tags(ctx context.Context) ([]string, error)
+	UserTags(ctx context.Context, nickname string) ([]string, error)
 	UsersByTags(ctx context.Context, tags []string, page *int) ([]*model.User, error)
 	Auctions(ctx context.Context, page *int) ([]*model.FeedAuction, error)
 	Login(ctx context.Context, nickname string, password string) (*model.Login, error)
@@ -1053,6 +1055,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.UserPosts(childComplexity, args["nickname"].(string), args["page"].(*int)), true
 
+	case "Query.userTags":
+		if e.complexity.Query.UserTags == nil {
+			break
+		}
+
+		args, err := ec.field_Query_userTags_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.UserTags(childComplexity, args["nickname"].(string)), true
+
 	case "Query.users":
 		if e.complexity.Query.Users == nil {
 			break
@@ -1360,6 +1374,7 @@ type Query {
   user(nickname: String!): User!
   userPosts(nickname: String!, page: Int = 1): [Post!]!
   tags: [String!]!
+  userTags(nickname: String!): [String!]!
   usersByTags(tags: [String!]!, page: Int = 1): [User!]!
   auctions(page: Int = 1): [FeedAuction!]!
   login(nickname: String!, password: String!): Login!
@@ -1977,6 +1992,20 @@ func (ec *executionContext) field_Query_userPosts_args(ctx context.Context, rawA
 		}
 	}
 	args["page"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_userTags_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["nickname"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["nickname"] = arg0
 	return args, nil
 }
 
@@ -5270,6 +5299,47 @@ func (ec *executionContext) _Query_tags(ctx context.Context, field graphql.Colle
 	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_userTags(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_userTags_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().UserTags(rctx, args["nickname"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_usersByTags(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -7829,6 +7899,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_tags(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "userTags":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_userTags(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
