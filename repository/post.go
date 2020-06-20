@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"errors"
+	"strconv"
 	"strings"
 	"time"
 
@@ -79,7 +80,7 @@ func (db *postRepository) CreatePost(author string, content graphql.Upload, desc
 		Content:   filepath,
 		LikeCount: 0,
 		Likes:     make([]string, 0),
-		Timestamp: time.Now(),
+		Timestamp: strconv.FormatInt(time.Now().Unix(), 10),
 	})
 	if err != nil {
 		return "", errors.New("Could not create post")
@@ -201,7 +202,7 @@ func (db *postRepository) CommentOnPost(sender, postID, message string) (string,
 		Text:      message,
 		LikeCount: 0,
 		Likes:     make([]string, 0),
-		Timestamp: time.Now(),
+		Timestamp: strconv.FormatInt(time.Now().Unix(), 10),
 	})
 	post.Comments.Count++
 	_, err = collection.UpdateOne(context.TODO(), bson.M{"_id": id}, bson.M{

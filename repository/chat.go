@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"errors"
+	"strconv"
 	"time"
 
 	"github.com/eaemenkkstudios/cancanvas-backend/graph/model"
@@ -37,9 +38,9 @@ type Chat struct {
 
 // Message struct
 type Message struct {
-	Message   string    `json:"message"`
-	Timestamp time.Time `json:"timestamp"`
-	Sender    string    `json:"sender"`
+	Message   string `json:"message"`
+	Timestamp string `json:"timestamp"`
+	Sender    string `json:"sender"`
 }
 
 type userChat struct {
@@ -182,7 +183,7 @@ func (db *chatRepository) addMessageToChat(chatID, message, sender string) error
 	msg := &Message{
 		Message:   message,
 		Sender:    sender,
-		Timestamp: time.Now(),
+		Timestamp: strconv.FormatInt(time.Now().Unix(), 10),
 	}
 	id, err := primitive.ObjectIDFromHex(chatID)
 	if err != nil {

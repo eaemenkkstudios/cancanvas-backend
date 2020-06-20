@@ -16,7 +16,7 @@ type Comment {
   text: String!
   likeCount: Int!
   likes: [String!]!
-  timestamp: Time!
+  timestamp: String!
 }
 
 type Post {
@@ -24,7 +24,7 @@ type Post {
   author: String!
   description: String
   content: String!
-  timestamp: Time!
+  timestamp: String!
   comments: CommentList!
   likeCount: Int!
   likes: [String!]!
@@ -41,7 +41,7 @@ type FeedPost {
   author: FeedUser!
   description: String
   content: String!
-  timestamp: Time!
+  timestamp: String!
   comments: CommentList!
   likeCount: Int!
   likes: [String!]!
@@ -53,8 +53,8 @@ type FeedAuction {
   description: String!
   offer: Float!
   bids: [Bid!]!
-  timestamp: Time!
-  deadline: Time!
+  timestamp: String!
+  deadline: String!
 }
 
 type Bid {
@@ -62,7 +62,7 @@ type Bid {
   issuer: String!
   deadline: String!
   price: Float!
-  timestamp: Time!
+  timestamp: String!
   selected: Boolean!
 }
 
@@ -72,14 +72,14 @@ type Auction {
   description: String!
   offer: Float!
   bids: [Bid!]!
-  timestamp: Time!
-  deadline: Time!
+  timestamp: String!
+  deadline: String!
 }
 
 type Message {
   chatID: ID!
   message: String!
-  timestamp: Time!
+  timestamp: String!
   sender: String!
 }
 

@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"errors"
+	"strconv"
 	"time"
 
 	"github.com/eaemenkkstudios/cancanvas-backend/graph/model"
@@ -32,8 +33,8 @@ type feedAuction struct {
 	Description string        `bson:"description"`
 	Offer       float64       `bson:"offer"`
 	Bids        []*model.Bid  `bson:"bids"`
-	Timestamp   time.Time     `bson:"timestamp"`
-	Deadline    time.Time     `bson:"deadline"`
+	Timestamp   string        `bson:"timestamp"`
+	Deadline    string        `bson:"deadline"`
 }
 
 func (db *auctionRepository) CreateAuction(sender, description string, offer float64) (*model.Auction, error) {
@@ -42,8 +43,8 @@ func (db *auctionRepository) CreateAuction(sender, description string, offer flo
 		Offer:       offer,
 		Description: description,
 		Bids:        make([]*model.Bid, 0),
-		Deadline:    time.Now().Add(72 * time.Hour),
-		Timestamp:   time.Now(),
+		Deadline:    strconv.FormatInt(time.Now().Add(72*time.Hour).Unix(), 10),
+		Timestamp:   strconv.FormatInt(time.Now().Unix(), 10),
 	}
 	collection := db.client.Collection(CollectionAuctions)
 	result, err := collection.InsertOne(context.TODO(), auction)
@@ -130,7 +131,11 @@ func (db *auctionRepository) CreateBid(sender, auctionID, deadline string, price
 	if auction.Host == sender {
 		return nil, errors.New("You can't make a bid in your own auction")
 	}
-	if auction.Deadline.Unix() < time.Now().Unix() {
+	auctionDeadline, err := strconv.ParseInt(auction.Deadline, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	if auctionDeadline < time.Now().Unix() {
 		return nil, errors.New("This auction is no longer accepting Bids")
 	}
 	for _, b := range auction.Bids {
@@ -143,7 +148,7 @@ func (db *auctionRepository) CreateBid(sender, auctionID, deadline string, price
 		Issuer:    sender,
 		Deadline:  deadline,
 		Price:     price,
-		Timestamp: time.Now(),
+		Timestamp: strconv.FormatInt(time.Now().Unix(), 10),
 	}
 	_, err = collection.UpdateOne(context.TODO(), bson.M{"_id": id}, bson.M{
 		"$push": bson.M{"bids": bid},

@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"errors"
-	"time"
 
 	"github.com/eaemenkkstudios/cancanvas-backend/graph/model"
 	"go.mongodb.org/mongo-driver/bson"
@@ -28,7 +27,7 @@ type feedPost struct {
 	Author      []*UserSchema      `bson:"author"`
 	Description *string            `bson:"description"`
 	Content     string             `bson:"content"`
-	Timestamp   time.Time          `bson:"timestamp"`
+	Timestamp   string             `bson:"timestamp"`
 	Comments    *model.CommentList `bson:"comments"`
 	LikeCount   int                `bson:"likecount"`
 	Likes       []string           `bson:"likes"`

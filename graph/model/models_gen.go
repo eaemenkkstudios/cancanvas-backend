@@ -2,27 +2,23 @@
 
 package model
 
-import (
-	"time"
-)
-
 type Auction struct {
-	ID          string    `json:"id" bson:"_id,omitempty"`
-	Host        string    `json:"host"`
-	Description string    `json:"description"`
-	Offer       float64   `json:"offer"`
-	Bids        []*Bid    `json:"bids"`
-	Timestamp   time.Time `json:"timestamp"`
-	Deadline    time.Time `json:"deadline"`
+	ID          string  `json:"id" bson:"_id,omitempty"`
+	Host        string  `json:"host"`
+	Description string  `json:"description"`
+	Offer       float64 `json:"offer"`
+	Bids        []*Bid  `json:"bids"`
+	Timestamp   string  `json:"timestamp"`
+	Deadline    string  `json:"deadline"`
 }
 
 type Bid struct {
-	ID        string    `json:"id"`
-	Issuer    string    `json:"issuer"`
-	Deadline  string    `json:"deadline"`
-	Price     float64   `json:"price"`
-	Timestamp time.Time `json:"timestamp"`
-	Selected  bool      `json:"selected"`
+	ID        string  `json:"id"`
+	Issuer    string  `json:"issuer"`
+	Deadline  string  `json:"deadline"`
+	Price     float64 `json:"price"`
+	Timestamp string  `json:"timestamp"`
+	Selected  bool    `json:"selected"`
 }
 
 type Chat struct {
@@ -32,12 +28,12 @@ type Chat struct {
 }
 
 type Comment struct {
-	ID        string    `json:"id"`
-	Author    string    `json:"author"`
-	Text      string    `json:"text"`
-	LikeCount int       `json:"likeCount"`
-	Likes     []string  `json:"likes"`
-	Timestamp time.Time `json:"timestamp"`
+	ID        string   `json:"id"`
+	Author    string   `json:"author"`
+	Text      string   `json:"text"`
+	LikeCount int      `json:"likeCount"`
+	Likes     []string `json:"likes"`
+	Timestamp string   `json:"timestamp"`
 }
 
 type CommentList struct {
@@ -51,8 +47,8 @@ type FeedAuction struct {
 	Description string    `json:"description"`
 	Offer       float64   `json:"offer"`
 	Bids        []*Bid    `json:"bids"`
-	Timestamp   time.Time `json:"timestamp"`
-	Deadline    time.Time `json:"deadline"`
+	Timestamp   string    `json:"timestamp"`
+	Deadline    string    `json:"deadline"`
 }
 
 type FeedPost struct {
@@ -60,7 +56,7 @@ type FeedPost struct {
 	Author      *FeedUser    `json:"author"`
 	Description *string      `json:"description"`
 	Content     string       `json:"content"`
-	Timestamp   time.Time    `json:"timestamp"`
+	Timestamp   string       `json:"timestamp"`
 	Comments    *CommentList `json:"comments"`
 	LikeCount   int          `json:"likeCount"`
 	Likes       []string     `json:"likes"`
@@ -78,10 +74,10 @@ type Login struct {
 }
 
 type Message struct {
-	ChatID    string    `json:"chatID"`
-	Message   string    `json:"message"`
-	Timestamp time.Time `json:"timestamp"`
-	Sender    string    `json:"sender"`
+	ChatID    string `json:"chatID"`
+	Message   string `json:"message"`
+	Timestamp string `json:"timestamp"`
+	Sender    string `json:"sender"`
 }
 
 type NewUser struct {
@@ -96,7 +92,7 @@ type Post struct {
 	Author      string       `json:"author"`
 	Description *string      `json:"description"`
 	Content     string       `json:"content"`
-	Timestamp   time.Time    `json:"timestamp"`
+	Timestamp   string       `json:"timestamp"`
 	Comments    *CommentList `json:"comments"`
 	LikeCount   int          `json:"likeCount"`
 	Likes       []string     `json:"likes"`

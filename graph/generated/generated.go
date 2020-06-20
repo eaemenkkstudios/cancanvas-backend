@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"sync"
 	"sync/atomic"
-	"time"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
@@ -1252,7 +1251,7 @@ type Comment {
   text: String!
   likeCount: Int!
   likes: [String!]!
-  timestamp: Time!
+  timestamp: String!
 }
 
 type Post {
@@ -1260,7 +1259,7 @@ type Post {
   author: String!
   description: String
   content: String!
-  timestamp: Time!
+  timestamp: String!
   comments: CommentList!
   likeCount: Int!
   likes: [String!]!
@@ -1277,7 +1276,7 @@ type FeedPost {
   author: FeedUser!
   description: String
   content: String!
-  timestamp: Time!
+  timestamp: String!
   comments: CommentList!
   likeCount: Int!
   likes: [String!]!
@@ -1289,8 +1288,8 @@ type FeedAuction {
   description: String!
   offer: Float!
   bids: [Bid!]!
-  timestamp: Time!
-  deadline: Time!
+  timestamp: String!
+  deadline: String!
 }
 
 type Bid {
@@ -1298,7 +1297,7 @@ type Bid {
   issuer: String!
   deadline: String!
   price: Float!
-  timestamp: Time!
+  timestamp: String!
   selected: Boolean!
 }
 
@@ -1308,14 +1307,14 @@ type Auction {
   description: String!
   offer: Float!
   bids: [Bid!]!
-  timestamp: Time!
-  deadline: Time!
+  timestamp: String!
+  deadline: String!
 }
 
 type Message {
   chatID: ID!
   message: String!
-  timestamp: Time!
+  timestamp: String!
   sender: String!
 }
 
@@ -2264,9 +2263,9 @@ func (ec *executionContext) _Auction_timestamp(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(time.Time)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Auction_deadline(ctx context.Context, field graphql.CollectedField, obj *model.Auction) (ret graphql.Marshaler) {
@@ -2298,9 +2297,9 @@ func (ec *executionContext) _Auction_deadline(ctx context.Context, field graphql
 		}
 		return graphql.Null
 	}
-	res := resTmp.(time.Time)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Bid_id(ctx context.Context, field graphql.CollectedField, obj *model.Bid) (ret graphql.Marshaler) {
@@ -2468,9 +2467,9 @@ func (ec *executionContext) _Bid_timestamp(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.(time.Time)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Bid_selected(ctx context.Context, field graphql.CollectedField, obj *model.Bid) (ret graphql.Marshaler) {
@@ -2808,9 +2807,9 @@ func (ec *executionContext) _Comment_timestamp(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(time.Time)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _CommentList_list(ctx context.Context, field graphql.CollectedField, obj *model.CommentList) (ret graphql.Marshaler) {
@@ -3080,9 +3079,9 @@ func (ec *executionContext) _FeedAuction_timestamp(ctx context.Context, field gr
 		}
 		return graphql.Null
 	}
-	res := resTmp.(time.Time)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FeedAuction_deadline(ctx context.Context, field graphql.CollectedField, obj *model.FeedAuction) (ret graphql.Marshaler) {
@@ -3114,9 +3113,9 @@ func (ec *executionContext) _FeedAuction_deadline(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(time.Time)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FeedPost_id(ctx context.Context, field graphql.CollectedField, obj *model.FeedPost) (ret graphql.Marshaler) {
@@ -3281,9 +3280,9 @@ func (ec *executionContext) _FeedPost_timestamp(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.(time.Time)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FeedPost_comments(ctx context.Context, field graphql.CollectedField, obj *model.FeedPost) (ret graphql.Marshaler) {
@@ -3655,9 +3654,9 @@ func (ec *executionContext) _Message_timestamp(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(time.Time)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Message_sender(ctx context.Context, field graphql.CollectedField, obj *model.Message) (ret graphql.Marshaler) {
@@ -4881,9 +4880,9 @@ func (ec *executionContext) _Post_timestamp(ctx context.Context, field graphql.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.(time.Time)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Post_comments(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
@@ -8667,20 +8666,6 @@ func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel
 	}
 
 	return ret
-}
-
-func (ec *executionContext) unmarshalNTime2timeᚐTime(ctx context.Context, v interface{}) (time.Time, error) {
-	return graphql.UnmarshalTime(v)
-}
-
-func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel ast.SelectionSet, v time.Time) graphql.Marshaler {
-	res := graphql.MarshalTime(v)
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-	}
-	return res
 }
 
 func (ec *executionContext) unmarshalNUpload2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx context.Context, v interface{}) (graphql.Upload, error) {
