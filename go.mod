@@ -9,6 +9,7 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gin-gonic/gin v1.6.3
 	github.com/joho/godotenv v1.3.0
+	github.com/plutov/paypal v2.0.5+incompatible
 	github.com/vektah/gqlparser/v2 v2.0.1
 	go.mongodb.org/mongo-driver v1.3.4
 	google.golang.org/api v0.26.0
