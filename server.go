@@ -23,6 +23,7 @@ func main() {
 	server.POST("/query", middleware.GraphQLHandler())
 	server.GET("/cancel", middleware.CancelHandler())
 	server.GET("/return", middleware.ResultHandler())
+	server.GET("/resetpassword", middleware.ResetPasswordHandler())
 
 	server.Run(":" + port)
 }

@@ -114,6 +114,16 @@ type User {
   lng: Float!
 }
 
+type Order {
+  ID: String!
+	PaymentID: String!
+	PaymentURL: String!
+	PayerID: String
+	AuctionID: String!
+	BidID: String!
+	Status: String!
+}
+
 type Login {
   token: String!
   first: Boolean!
@@ -131,6 +141,8 @@ type Query {
   userTags(nickname: String!): [String!]!
   usersByTags(tags: [String!]!, page: Int = 1): [User!]!
   auctions(page: Int = 1): [FeedAuction!]!
+  order(orderID: String!): Order!
+  orders: [Order!]!
   login(nickname: String!, password: String!): Login!
   isFollowing(nickname: String!): Boolean!
   acceptedBids: [FeedAuction!]!

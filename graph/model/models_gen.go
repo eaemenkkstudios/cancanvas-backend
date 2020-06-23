@@ -88,6 +88,16 @@ type NewUser struct {
 	Password string `json:"password"`
 }
 
+type Order struct {
+	ID         string  `json:"ID"`
+	PaymentID  string  `json:"PaymentID"`
+	PaymentURL string  `json:"PaymentURL"`
+	PayerID    *string `json:"PayerID"`
+	AuctionID  string  `json:"AuctionID"`
+	BidID      string  `json:"BidID"`
+	Status     string  `json:"Status"`
+}
+
 type Post struct {
 	ID          string       `json:"id" bson:"_id,omitempty"`
 	Author      string       `json:"author"`

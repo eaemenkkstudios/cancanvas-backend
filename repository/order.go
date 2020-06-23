@@ -5,14 +5,18 @@ import (
 	"errors"
 	"strconv"
 
+	"github.com/eaemenkkstudios/cancanvas-backend/graph/model"
 	"github.com/eaemenkkstudios/cancanvas-backend/service"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // OrderRepository interface
 type OrderRepository interface {
 	CreateOrder(auctionID, bidID, description string, price float64) (string, error)
+	GetOrder(sender, orderID string) (*model.Order, error)
+	GetOrders(sender string) ([]*model.Order, error)
 	UpdateOrder(orderID, status string, payerID *string) (bool, error)
 	DeleteOrder(orderID string) (bool, error)
 }
@@ -61,6 +65,75 @@ func (db *orderRepository) CreateOrder(auctionID, bidID, description string, pri
 		return "", err
 	}
 	return order.URL, nil
+}
+
+func (db *orderRepository) GetOrder(sender, orderID string) (*model.Order, error) {
+	collection := db.client.Collection(CollectionPayments)
+	result := collection.FindOne(context.TODO(), bson.M{"paymentID": orderID})
+	var p Payment
+	err := result.Decode(&p)
+	if err != nil {
+		return nil, errors.New("Order not found")
+	}
+	collection = db.client.Collection(CollectionAuctions)
+	id, err := primitive.ObjectIDFromHex(p.AuctionID)
+	if err != nil {
+		return nil, errors.New("Error while getting order")
+	}
+	result = collection.FindOne(context.TODO(), bson.M{"_id": id})
+	var a model.Auction
+	err = result.Decode(&a)
+	if err != nil {
+		return nil, errors.New("Error while getting order")
+	}
+	order := &model.Order{
+		ID:         p.ID,
+		AuctionID:  p.AuctionID,
+		BidID:      p.BidID,
+		PayerID:    p.PayerID,
+		PaymentID:  p.PaymentID,
+		PaymentURL: p.PaymentURL,
+		Status:     p.Status,
+	}
+	if a.Host == sender {
+		return order, nil
+	}
+	for _, b := range a.Bids {
+		if b.ID == p.BidID && b.Issuer == sender {
+			return order, nil
+		}
+	}
+	return nil, errors.New("Unauthorized")
+}
+
+func (db *orderRepository) GetOrders(sender string) ([]*model.Order, error) {
+	collection := db.client.Collection(CollectionAuctions)
+	ctx := context.TODO()
+	cursor, err := collection.Find(ctx, bson.M{"host": sender})
+	if err != nil {
+		return nil, errors.New("No orders found")
+	}
+	auctionIDs := make([]string, 0)
+	defer cursor.Close(ctx)
+	for cursor.Next(ctx) {
+		var a model.Auction
+		err = cursor.Decode(&a)
+		if err != nil {
+			continue
+		}
+		auctionIDs = append(auctionIDs, a.ID)
+	}
+
+	collection = db.client.Collection(CollectionPayments)
+	cursor, err = collection.Find(ctx, bson.M{"auctionID": bson.M{"$in": auctionIDs}})
+	orders := make([]*model.Order, 0)
+	defer cursor.Close(ctx)
+	for cursor.Next(ctx) {
+		var o model.Order
+		err = cursor.Decode(&o)
+		orders = append(orders, &o)
+	}
+	return orders, err
 }
 
 func (db *orderRepository) UpdateOrder(orderID, status string, payerID *string) (bool, error) {

@@ -19,6 +19,7 @@ var chatRepository = repository.NewChatRepository()
 var postRepository = repository.NewPostRepository()
 var feedRepository = repository.NewFeedRepository()
 var tagsRepository = repository.NewTagsRepository()
+var orderRepository = repository.NewOrderRepository()
 var auctionRepository = repository.NewAuctionRepository()
 
 func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) (*model.User, error) {
@@ -271,6 +272,22 @@ func (r *queryResolver) UsersByTags(ctx context.Context, tags []string, page *in
 
 func (r *queryResolver) Auctions(ctx context.Context, page *int) ([]*model.FeedAuction, error) {
 	return auctionRepository.GetAuctions(page)
+}
+
+func (r *queryResolver) Order(ctx context.Context, orderID string) (*model.Order, error) {
+	sender, err := utils.GetSenderFromTokenHTTP(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return orderRepository.GetOrder(sender, orderID)
+}
+
+func (r *queryResolver) Orders(ctx context.Context) ([]*model.Order, error) {
+	sender, err := utils.GetSenderFromTokenHTTP(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return orderRepository.GetOrders(sender)
 }
 
 func (r *queryResolver) Login(ctx context.Context, nickname string, password string) (*model.Login, error) {
