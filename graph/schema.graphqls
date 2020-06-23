@@ -10,6 +10,15 @@ type CommentList {
   count: Int!
 }
 
+type PostComment {
+  id: ID!
+  author: FeedUser!
+  text: String!
+  likeCount: Int!
+  likes: [String!]!
+  timestamp: String!
+}
+
 type Comment {
   id: ID!
   author: String!
@@ -28,6 +37,7 @@ type Post {
   comments: CommentList!
   likeCount: Int!
   likes: [String!]!
+  bidID: String
 }
 
 type FeedUser {
@@ -45,6 +55,7 @@ type FeedPost {
   comments: CommentList!
   likeCount: Int!
   likes: [String!]!
+  bidID: String
 }
 
 type FeedAuction {
@@ -115,6 +126,7 @@ type Query {
   trending(page: Int = 1): [FeedPost!]!
   user(nickname: String!): User!
   userPosts(nickname: String!, page: Int = 1): [Post!]!
+  comments(postID: String!, page: Int = 1): [PostComment!]!
   tags: [String!]!
   userTags(nickname: String!): [String!]!
   usersByTags(tags: [String!]!, page: Int = 1): [User!]!
@@ -122,6 +134,7 @@ type Query {
   login(nickname: String!, password: String!): Login!
   isFollowing(nickname: String!): Boolean!
   acceptedBids: [FeedAuction!]!
+  bidPaymentLink(auctionID: String!, bidID: String!): String!
 }
 
 input NewUser {
@@ -143,7 +156,7 @@ type Mutation {
   unfollow(nickname: String!): Boolean!
   sendMessage(msg: String!, receiver: String!): Boolean!
   sendMessageToDialogflow(msg: String!): String!
-  createPost(content: Upload!, description: String): String!
+  createPost(content: Upload!, description: String, bidID: String): String!
   editPost(postID: String!, description: String!): Boolean!
   deletePost(postID: String!): Boolean!
   likeComment(postID: String!, commentID: String!): Boolean!

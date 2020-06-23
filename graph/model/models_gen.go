@@ -60,6 +60,7 @@ type FeedPost struct {
 	Comments    *CommentList `json:"comments"`
 	LikeCount   int          `json:"likeCount"`
 	Likes       []string     `json:"likes"`
+	BidID       *string      `json:"bidID"`
 }
 
 type FeedUser struct {
@@ -96,6 +97,16 @@ type Post struct {
 	Comments    *CommentList `json:"comments"`
 	LikeCount   int          `json:"likeCount"`
 	Likes       []string     `json:"likes"`
+	BidID       *string      `json:"bidID"`
+}
+
+type PostComment struct {
+	ID        string    `json:"id"`
+	Author    *FeedUser `json:"author"`
+	Text      string    `json:"text"`
+	LikeCount int       `json:"likeCount"`
+	Likes     []string  `json:"likes"`
+	Timestamp string    `json:"timestamp"`
 }
 
 type User struct {

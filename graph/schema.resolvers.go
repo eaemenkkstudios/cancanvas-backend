@@ -105,12 +105,12 @@ func (r *mutationResolver) SendMessageToDialogflow(ctx context.Context, msg stri
 	return chatRepository.SendMessageToDialogflow(sender, msg)
 }
 
-func (r *mutationResolver) CreatePost(ctx context.Context, content graphql.Upload, description *string) (string, error) {
+func (r *mutationResolver) CreatePost(ctx context.Context, content graphql.Upload, description *string, bidID *string) (string, error) {
 	author, err := utils.GetSenderFromTokenHTTP(ctx)
 	if err != nil {
 		return "", err
 	}
-	return postRepository.CreatePost(author, content, description)
+	return postRepository.CreatePost(author, content, description, bidID)
 }
 
 func (r *mutationResolver) EditPost(ctx context.Context, postID string, description string) (bool, error) {
@@ -253,6 +253,10 @@ func (r *queryResolver) UserPosts(ctx context.Context, nickname string, page *in
 	return postRepository.GetPosts(nickname, page)
 }
 
+func (r *queryResolver) Comments(ctx context.Context, postID string, page *int) ([]*model.PostComment, error) {
+	return postRepository.GetComments(postID, page)
+}
+
 func (r *queryResolver) Tags(ctx context.Context) ([]string, error) {
 	return tagsRepository.GetTags()
 }
@@ -287,6 +291,14 @@ func (r *queryResolver) AcceptedBids(ctx context.Context) ([]*model.FeedAuction,
 		return nil, err
 	}
 	return auctionRepository.AcceptedBids(sender)
+}
+
+func (r *queryResolver) BidPaymentLink(ctx context.Context, auctionID string, bidID string) (string, error) {
+	sender, err := utils.GetSenderFromTokenHTTP(ctx)
+	if err != nil {
+		return "", err
+	}
+	return auctionRepository.BidPaymentLink(sender, auctionID, bidID)
 }
 
 func (r *subscriptionResolver) NewChatMessage(ctx context.Context) (<-chan *model.Message, error) {

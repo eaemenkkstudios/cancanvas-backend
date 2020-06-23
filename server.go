@@ -21,6 +21,8 @@ func main() {
 	server.GET("/", middleware.PlaygroundHandler())
 	server.GET("/query", middleware.GraphQLHandler())
 	server.POST("/query", middleware.GraphQLHandler())
+	server.GET("/cancel", middleware.CancelHandler())
+	server.GET("/return", middleware.ResultHandler())
 
 	server.Run(":" + port)
 }

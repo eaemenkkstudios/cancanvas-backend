@@ -31,6 +31,7 @@ type feedPost struct {
 	Comments    *model.CommentList `bson:"comments"`
 	LikeCount   int                `bson:"likecount"`
 	Likes       []string           `bson:"likes"`
+	BidID       *string            `bson:"bidID"`
 }
 
 func (db *feedRepository) GetFeed(nickname string, page *int) ([]*model.FeedPost, error) {
@@ -66,21 +67,22 @@ func (db *feedRepository) GetFeed(nickname string, page *int) ([]*model.FeedPost
 	var posts = make([]*model.FeedPost, 0)
 	defer cursor.Close(ctx)
 	for cursor.Next(ctx) {
-		var u feedPost
+		var p feedPost
 		err = cursor.Decode(&u)
 		posts = append(posts, &model.FeedPost{
-			ID: u.ID,
+			ID: p.ID,
 			Author: &model.FeedUser{
-				Name:     u.Author[0].Name,
-				Nickname: u.Author[0].Nickname,
-				Picture:  u.Author[0].Picture,
+				Name:     p.Author[0].Name,
+				Nickname: p.Author[0].Nickname,
+				Picture:  p.Author[0].Picture,
 			},
-			Comments:    u.Comments,
-			Content:     u.Content,
-			Description: u.Description,
-			LikeCount:   u.LikeCount,
-			Likes:       u.Likes,
-			Timestamp:   u.Timestamp,
+			Comments:    p.Comments,
+			Content:     p.Content,
+			Description: p.Description,
+			LikeCount:   p.LikeCount,
+			Likes:       p.Likes,
+			Timestamp:   p.Timestamp,
+			BidID:       p.BidID,
 		})
 	}
 	return posts, err
@@ -126,6 +128,7 @@ func (db *feedRepository) GetTrending(page *int) ([]*model.FeedPost, error) {
 			LikeCount:   p.LikeCount,
 			Likes:       p.Likes,
 			Timestamp:   p.Timestamp,
+			BidID:       p.BidID,
 		})
 	}
 	return posts, err

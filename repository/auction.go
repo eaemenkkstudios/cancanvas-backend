@@ -21,10 +21,12 @@ type AuctionRepository interface {
 	DeleteBid(sender, auctionID, bidID string) (bool, error)
 	AcceptBid(sender, auctionID, bidID string) (bool, error)
 	AcceptedBids(sender string) ([]*model.FeedAuction, error)
+	BidPaymentLink(sender, auctionID, bidID string) (string, error)
 }
 
 type auctionRepository struct {
 	client *mongo.Database
+	order  OrderRepository
 }
 
 type feedAuction struct {
@@ -270,10 +272,43 @@ func (db *auctionRepository) AcceptedBids(sender string) ([]*model.FeedAuction, 
 	return auctionList, err
 }
 
+func (db *auctionRepository) BidPaymentLink(sender, auctionID, bidID string) (string, error) {
+	id, err := primitive.ObjectIDFromHex(auctionID)
+	if err != nil {
+		return "", errors.New("Invalid auctionID")
+	}
+	collection := db.client.Collection(CollectionAuctions)
+	result := collection.FindOne(context.TODO(), bson.M{"_id": id})
+	var auction model.Auction
+	err = result.Decode(&auction)
+	if err != nil {
+		return "", errors.New("Auction not found")
+	}
+	if auction.Host != sender {
+		return "", errors.New("Unauthorized")
+	}
+
+	for _, b := range auction.Bids {
+		if b.ID == bidID {
+			if !b.Selected {
+				return "", errors.New("You need to accept this bid first")
+			}
+			url, err := db.order.CreateOrder(auctionID, bidID, auction.Description, b.Price)
+			if err != nil {
+				return "", err
+			}
+			return url, nil
+		}
+	}
+	return "", errors.New("Could not generate link")
+}
+
 // NewAuctionRepository function
 func NewAuctionRepository() AuctionRepository {
 	client := newDatabaseClient()
+	order := NewOrderRepository()
 	return &auctionRepository{
 		client,
+		order,
 	}
 }

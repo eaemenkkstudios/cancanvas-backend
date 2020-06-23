@@ -19,7 +19,8 @@ import (
 // PostRepository interface
 type PostRepository interface {
 	GetPosts(author string, page *int) ([]*model.Post, error)
-	CreatePost(author string, content graphql.Upload, description *string) (string, error)
+	GetComments(postID string, page *int) ([]*model.PostComment, error)
+	CreatePost(author string, content graphql.Upload, description, bidID *string) (string, error)
 	EditPost(author, postID, description string) (bool, error)
 	DeletePost(author, postID string) (bool, error)
 	LikePost(sender, postID string) (bool, error)
@@ -57,7 +58,47 @@ func (db *postRepository) GetPosts(author string, page *int) ([]*model.Post, err
 	return posts, err
 }
 
-func (db *postRepository) CreatePost(author string, content graphql.Upload, description *string) (string, error) {
+func (db *postRepository) GetComments(postID string, page *int) ([]*model.PostComment, error) {
+	if page == nil || *page < 1 {
+		*page = 1
+	}
+	collection := db.client.Collection(CollectionPosts)
+	id, err := primitive.ObjectIDFromHex(postID)
+	if err != nil {
+		return nil, errors.New("Invalid postID")
+	}
+	result := collection.FindOne(context.TODO(), bson.M{"_id": id})
+	var p model.Post
+	err = result.Decode(&p)
+	if err != nil {
+		return nil, errors.New("Post not found")
+	}
+	commentList := make([]*model.PostComment, 0)
+	for i := PageSize * (*page - 1); i < PageSize**page && i < len(p.Comments.List); i++ {
+		collection = db.client.Collection(CollectionUsers)
+		result = collection.FindOne(context.TODO(), bson.M{"_id": p.Comments.List[i].Author})
+		var u UserSchema
+		err = result.Decode(&u)
+		if err != nil {
+			return nil, err
+		}
+		commentList = append(commentList, &model.PostComment{
+			ID: p.Comments.List[i].ID,
+			Author: &model.FeedUser{
+				Name:     u.Name,
+				Nickname: u.Nickname,
+				Picture:  u.Picture,
+			},
+			LikeCount: p.Comments.List[i].LikeCount,
+			Likes:     p.Comments.List[i].Likes,
+			Text:      p.Comments.List[i].Text,
+			Timestamp: p.Comments.List[i].Timestamp,
+		})
+	}
+	return commentList, nil
+}
+
+func (db *postRepository) CreatePost(author string, content graphql.Upload, description, bidID *string) (string, error) {
 	collection := db.client.Collection(CollectionUsers)
 	user := collection.FindOne(context.TODO(), bson.M{"_id": author})
 	var u UserSchema
@@ -81,6 +122,7 @@ func (db *postRepository) CreatePost(author string, content graphql.Upload, desc
 		LikeCount: 0,
 		Likes:     make([]string, 0),
 		Timestamp: strconv.FormatInt(time.Now().Unix(), 10),
+		BidID:     bidID,
 	})
 	if err != nil {
 		return "", errors.New("Could not create post")
