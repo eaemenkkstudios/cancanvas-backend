@@ -12,7 +12,7 @@ import (
 // FeedRepository interface
 type FeedRepository interface {
 	GetFeed(nickname string, page *int) ([]*model.FeedPost, error)
-	GetTrending(page *int) ([]*model.FeedPost, error)
+	GetTrending(nickname string, page *int) ([]*model.FeedPost, error)
 }
 
 type feedRepository struct {
@@ -69,6 +69,13 @@ func (db *feedRepository) GetFeed(nickname string, page *int) ([]*model.FeedPost
 	for cursor.Next(ctx) {
 		var p feedPost
 		err = cursor.Decode(&u)
+		liked := false
+		for _, l := range p.Likes {
+			if l == nickname {
+				liked = true
+				break
+			}
+		}
 		posts = append(posts, &model.FeedPost{
 			ID: p.ID,
 			Author: &model.FeedUser{
@@ -79,8 +86,8 @@ func (db *feedRepository) GetFeed(nickname string, page *int) ([]*model.FeedPost
 			Comments:    p.Comments,
 			Content:     p.Content,
 			Description: p.Description,
-			LikeCount:   p.LikeCount,
-			Likes:       p.Likes,
+			Likes:       p.LikeCount,
+			Liked:       liked,
 			Timestamp:   p.Timestamp,
 			BidID:       p.BidID,
 		})
@@ -88,7 +95,7 @@ func (db *feedRepository) GetFeed(nickname string, page *int) ([]*model.FeedPost
 	return posts, err
 }
 
-func (db *feedRepository) GetTrending(page *int) ([]*model.FeedPost, error) {
+func (db *feedRepository) GetTrending(nickname string, page *int) ([]*model.FeedPost, error) {
 	if page == nil || *page < 1 {
 		*page = 1
 	}
@@ -115,6 +122,13 @@ func (db *feedRepository) GetTrending(page *int) ([]*model.FeedPost, error) {
 	for cursor.Next(ctx) {
 		var p feedPost
 		err = cursor.Decode(&p)
+		liked := false
+		for _, l := range p.Likes {
+			if l == nickname {
+				liked = true
+				break
+			}
+		}
 		posts = append(posts, &model.FeedPost{
 			ID: p.ID,
 			Author: &model.FeedUser{
@@ -125,8 +139,8 @@ func (db *feedRepository) GetTrending(page *int) ([]*model.FeedPost, error) {
 			Comments:    p.Comments,
 			Content:     p.Content,
 			Description: p.Description,
-			LikeCount:   p.LikeCount,
-			Likes:       p.Likes,
+			Likes:       p.LikeCount,
+			Liked:       liked,
 			Timestamp:   p.Timestamp,
 			BidID:       p.BidID,
 		})

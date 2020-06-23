@@ -14,8 +14,8 @@ type PostComment {
   id: ID!
   author: FeedUser!
   text: String!
-  likeCount: Int!
-  likes: [String!]!
+  likes: Int!
+  liked: Boolean!
   timestamp: String!
 }
 
@@ -37,6 +37,7 @@ type Post {
   comments: CommentList!
   likeCount: Int!
   likes: [String!]!
+  liked: Boolean!
   bidID: String
 }
 
@@ -53,8 +54,8 @@ type FeedPost {
   content: String!
   timestamp: String!
   comments: CommentList!
-  likeCount: Int!
-  likes: [String!]!
+  likes: Int!
+  liked: Boolean!
   bidID: String
 }
 
@@ -174,6 +175,7 @@ type Mutation {
   likeComment(postID: String!, commentID: String!): Boolean!
   likePost(postID: String!): Boolean!
   commentOnPost(postID: String!, message: String!): String!
+  editComment(postID: String!, commentID: String!, message: String!): Boolean!
   deleteComment(postID: String!, commentID: String!): Boolean!
   createAuction(offer: Float!, description: String!): Auction!
   deleteAuction(auctionID: String!): Boolean!

@@ -18,13 +18,14 @@ import (
 
 // PostRepository interface
 type PostRepository interface {
-	GetPosts(author string, page *int) ([]*model.Post, error)
-	GetComments(postID string, page *int) ([]*model.PostComment, error)
+	GetPosts(sender, author string, page *int) ([]*model.Post, error)
+	GetComments(sender, postID string, page *int) ([]*model.PostComment, error)
 	CreatePost(author string, content graphql.Upload, description, bidID *string) (string, error)
 	EditPost(author, postID, description string) (bool, error)
 	DeletePost(author, postID string) (bool, error)
 	LikePost(sender, postID string) (bool, error)
 	CommentOnPost(sender, postID, message string) (string, error)
+	EditComment(sender, postID, commentID, message string) (bool, error)
 	DeleteComment(sender, postID, commentID string) (bool, error)
 	LikeComment(sender, postID, commentID string) (bool, error)
 }
@@ -34,7 +35,7 @@ type postRepository struct {
 	awsSession service.AwsService
 }
 
-func (db *postRepository) GetPosts(author string, page *int) ([]*model.Post, error) {
+func (db *postRepository) GetPosts(sender, author string, page *int) ([]*model.Post, error) {
 	if page == nil || *page < 1 {
 		*page = 1
 	}
@@ -53,12 +54,19 @@ func (db *postRepository) GetPosts(author string, page *int) ([]*model.Post, err
 	for cursor.Next(ctx) {
 		var p model.Post
 		err = cursor.Decode(&p)
+		p.Liked = false
+		for _, l := range p.Likes {
+			if l == sender {
+				p.Liked = true
+				break
+			}
+		}
 		posts = append(posts, &p)
 	}
 	return posts, err
 }
 
-func (db *postRepository) GetComments(postID string, page *int) ([]*model.PostComment, error) {
+func (db *postRepository) GetComments(sender, postID string, page *int) ([]*model.PostComment, error) {
 	if page == nil || *page < 1 {
 		*page = 1
 	}
@@ -82,6 +90,13 @@ func (db *postRepository) GetComments(postID string, page *int) ([]*model.PostCo
 		if err != nil {
 			return nil, err
 		}
+		liked := false
+		for _, l := range p.Comments.List[i].Likes {
+			if l == sender {
+				liked = true
+				break
+			}
+		}
 		commentList = append(commentList, &model.PostComment{
 			ID: p.Comments.List[i].ID,
 			Author: &model.FeedUser{
@@ -89,8 +104,8 @@ func (db *postRepository) GetComments(postID string, page *int) ([]*model.PostCo
 				Nickname: u.Nickname,
 				Picture:  u.Picture,
 			},
-			LikeCount: p.Comments.List[i].LikeCount,
-			Likes:     p.Comments.List[i].Likes,
+			Likes:     p.Comments.List[i].LikeCount,
+			Liked:     liked,
 			Text:      p.Comments.List[i].Text,
 			Timestamp: p.Comments.List[i].Timestamp,
 		})
@@ -254,6 +269,39 @@ func (db *postRepository) CommentOnPost(sender, postID, message string) (string,
 		return "", err
 	}
 	return commentID, nil
+}
+
+func (db *postRepository) EditComment(sender, postID, commentID, message string) (bool, error) {
+	collection := db.client.Collection(CollectionPosts)
+	id, err := primitive.ObjectIDFromHex(postID)
+	if err != nil {
+		return false, errors.New("Invalid postID")
+	}
+	result := collection.FindOne(context.TODO(), bson.M{"_id": id})
+	var p model.Post
+	err = result.Decode(&p)
+	if err != nil {
+		return false, errors.New("Post not found")
+	}
+	edited := false
+	for i, c := range p.Comments.List {
+		if c.ID == commentID && c.Author == sender {
+			p.Comments.List[i].Text = message
+			p.Comments.List[i].Timestamp = strconv.FormatInt(time.Now().Unix(), 10)
+			edited = true
+			break
+		}
+	}
+	if !edited {
+		return false, errors.New("Comment not found")
+	}
+	res, err := collection.UpdateOne(context.TODO(), bson.M{"_id": id}, bson.M{
+		"$set": bson.M{"comments": p.Comments},
+	})
+	if err != nil && res.ModifiedCount > 0 {
+		return true, nil
+	}
+	return false, err
 }
 
 func (db *postRepository) DeleteComment(sender, postID, commentID string) (bool, error) {

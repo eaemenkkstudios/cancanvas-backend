@@ -58,8 +58,8 @@ type FeedPost struct {
 	Content     string       `json:"content"`
 	Timestamp   string       `json:"timestamp"`
 	Comments    *CommentList `json:"comments"`
-	LikeCount   int          `json:"likeCount"`
-	Likes       []string     `json:"likes"`
+	Likes       int          `json:"likes"`
+	Liked       bool         `json:"liked"`
 	BidID       *string      `json:"bidID"`
 }
 
@@ -107,6 +107,7 @@ type Post struct {
 	Comments    *CommentList `json:"comments"`
 	LikeCount   int          `json:"likeCount"`
 	Likes       []string     `json:"likes"`
+	Liked       bool         `json:"liked" bson:"_id,omitempty"`
 	BidID       *string      `json:"bidID"`
 }
 
@@ -114,8 +115,8 @@ type PostComment struct {
 	ID        string    `json:"id"`
 	Author    *FeedUser `json:"author"`
 	Text      string    `json:"text"`
-	LikeCount int       `json:"likeCount"`
-	Likes     []string  `json:"likes"`
+	Likes     int       `json:"likes"`
+	Liked     bool      `json:"liked"`
 	Timestamp string    `json:"timestamp"`
 }
 

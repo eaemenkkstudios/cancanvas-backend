@@ -13,15 +13,6 @@ import (
 	"github.com/eaemenkkstudios/cancanvas-backend/utils"
 )
 
-var userRepository = repository.NewUserRepository()
-var authRepository = repository.NewAuthRepository()
-var chatRepository = repository.NewChatRepository()
-var postRepository = repository.NewPostRepository()
-var feedRepository = repository.NewFeedRepository()
-var tagsRepository = repository.NewTagsRepository()
-var orderRepository = repository.NewOrderRepository()
-var auctionRepository = repository.NewAuctionRepository()
-
 func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) (*model.User, error) {
 	return userRepository.CreateUser(&input)
 }
@@ -154,6 +145,14 @@ func (r *mutationResolver) CommentOnPost(ctx context.Context, postID string, mes
 	return postRepository.CommentOnPost(sender, postID, message)
 }
 
+func (r *mutationResolver) EditComment(ctx context.Context, postID string, commentID string, message string) (bool, error) {
+	sender, err := utils.GetSenderFromTokenHTTP(ctx)
+	if err != nil {
+		return false, err
+	}
+	return postRepository.EditComment(sender, postID, commentID, message)
+}
+
 func (r *mutationResolver) DeleteComment(ctx context.Context, postID string, commentID string) (bool, error) {
 	sender, err := utils.GetSenderFromTokenHTTP(ctx)
 	if err != nil {
@@ -239,7 +238,11 @@ func (r *queryResolver) Feed(ctx context.Context, page *int) ([]*model.FeedPost,
 }
 
 func (r *queryResolver) Trending(ctx context.Context, page *int) ([]*model.FeedPost, error) {
-	return feedRepository.GetTrending(page)
+	nickname, err := utils.GetSenderFromTokenHTTP(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return feedRepository.GetTrending(nickname, page)
 }
 
 func (r *queryResolver) User(ctx context.Context, nickname string) (*model.User, error) {
@@ -251,11 +254,19 @@ func (r *queryResolver) User(ctx context.Context, nickname string) (*model.User,
 }
 
 func (r *queryResolver) UserPosts(ctx context.Context, nickname string, page *int) ([]*model.Post, error) {
-	return postRepository.GetPosts(nickname, page)
+	sender, err := utils.GetSenderFromTokenHTTP(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return postRepository.GetPosts(sender, nickname, page)
 }
 
 func (r *queryResolver) Comments(ctx context.Context, postID string, page *int) ([]*model.PostComment, error) {
-	return postRepository.GetComments(postID, page)
+	sender, err := utils.GetSenderFromTokenHTTP(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return postRepository.GetComments(sender, postID, page)
 }
 
 func (r *queryResolver) Tags(ctx context.Context) ([]string, error) {
@@ -338,3 +349,18 @@ func (r *Resolver) Subscription() generated.SubscriptionResolver { return &subsc
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type subscriptionResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//    it when you're done.
+//  - You have helper methods in this file. Move them out to keep these resolver files clean.
+var userRepository = repository.NewUserRepository()
+var authRepository = repository.NewAuthRepository()
+var chatRepository = repository.NewChatRepository()
+var postRepository = repository.NewPostRepository()
+var feedRepository = repository.NewFeedRepository()
+var tagsRepository = repository.NewTagsRepository()
+var orderRepository = repository.NewOrderRepository()
+var auctionRepository = repository.NewAuctionRepository()

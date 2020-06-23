@@ -101,7 +101,7 @@ type ComplexityRoot struct {
 		Content     func(childComplexity int) int
 		Description func(childComplexity int) int
 		ID          func(childComplexity int) int
-		LikeCount   func(childComplexity int) int
+		Liked       func(childComplexity int) int
 		Likes       func(childComplexity int) int
 		Timestamp   func(childComplexity int) int
 	}
@@ -136,6 +136,7 @@ type ComplexityRoot struct {
 		DeleteBid               func(childComplexity int, auctionID string, bidID string) int
 		DeleteComment           func(childComplexity int, postID string, commentID string) int
 		DeletePost              func(childComplexity int, postID string) int
+		EditComment             func(childComplexity int, postID string, commentID string, message string) int
 		EditPost                func(childComplexity int, postID string, description string) int
 		Follow                  func(childComplexity int, nickname string) int
 		LikeComment             func(childComplexity int, postID string, commentID string) int
@@ -170,6 +171,7 @@ type ComplexityRoot struct {
 		Description func(childComplexity int) int
 		ID          func(childComplexity int) int
 		LikeCount   func(childComplexity int) int
+		Liked       func(childComplexity int) int
 		Likes       func(childComplexity int) int
 		Timestamp   func(childComplexity int) int
 	}
@@ -177,7 +179,7 @@ type ComplexityRoot struct {
 	PostComment struct {
 		Author    func(childComplexity int) int
 		ID        func(childComplexity int) int
-		LikeCount func(childComplexity int) int
+		Liked     func(childComplexity int) int
 		Likes     func(childComplexity int) int
 		Text      func(childComplexity int) int
 		Timestamp func(childComplexity int) int
@@ -240,6 +242,7 @@ type MutationResolver interface {
 	LikeComment(ctx context.Context, postID string, commentID string) (bool, error)
 	LikePost(ctx context.Context, postID string) (bool, error)
 	CommentOnPost(ctx context.Context, postID string, message string) (string, error)
+	EditComment(ctx context.Context, postID string, commentID string, message string) (bool, error)
 	DeleteComment(ctx context.Context, postID string, commentID string) (bool, error)
 	CreateAuction(ctx context.Context, offer float64, description string) (*model.Auction, error)
 	DeleteAuction(ctx context.Context, auctionID string) (bool, error)
@@ -546,12 +549,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.FeedPost.ID(childComplexity), true
 
-	case "FeedPost.likeCount":
-		if e.complexity.FeedPost.LikeCount == nil {
+	case "FeedPost.liked":
+		if e.complexity.FeedPost.Liked == nil {
 			break
 		}
 
-		return e.complexity.FeedPost.LikeCount(childComplexity), true
+		return e.complexity.FeedPost.Liked(childComplexity), true
 
 	case "FeedPost.likes":
 		if e.complexity.FeedPost.Likes == nil {
@@ -761,6 +764,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeletePost(childComplexity, args["postID"].(string)), true
+
+	case "Mutation.editComment":
+		if e.complexity.Mutation.EditComment == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_editComment_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.EditComment(childComplexity, args["postID"].(string), args["commentID"].(string), args["message"].(string)), true
 
 	case "Mutation.editPost":
 		if e.complexity.Mutation.EditPost == nil {
@@ -1028,6 +1043,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Post.LikeCount(childComplexity), true
 
+	case "Post.liked":
+		if e.complexity.Post.Liked == nil {
+			break
+		}
+
+		return e.complexity.Post.Liked(childComplexity), true
+
 	case "Post.likes":
 		if e.complexity.Post.Likes == nil {
 			break
@@ -1056,12 +1078,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PostComment.ID(childComplexity), true
 
-	case "PostComment.likeCount":
-		if e.complexity.PostComment.LikeCount == nil {
+	case "PostComment.liked":
+		if e.complexity.PostComment.Liked == nil {
 			break
 		}
 
-		return e.complexity.PostComment.LikeCount(childComplexity), true
+		return e.complexity.PostComment.Liked(childComplexity), true
 
 	case "PostComment.likes":
 		if e.complexity.PostComment.Likes == nil {
@@ -1449,8 +1471,8 @@ type PostComment {
   id: ID!
   author: FeedUser!
   text: String!
-  likeCount: Int!
-  likes: [String!]!
+  likes: Int!
+  liked: Boolean!
   timestamp: String!
 }
 
@@ -1472,6 +1494,7 @@ type Post {
   comments: CommentList!
   likeCount: Int!
   likes: [String!]!
+  liked: Boolean!
   bidID: String
 }
 
@@ -1488,8 +1511,8 @@ type FeedPost {
   content: String!
   timestamp: String!
   comments: CommentList!
-  likeCount: Int!
-  likes: [String!]!
+  likes: Int!
+  liked: Boolean!
   bidID: String
 }
 
@@ -1609,6 +1632,7 @@ type Mutation {
   likeComment(postID: String!, commentID: String!): Boolean!
   likePost(postID: String!): Boolean!
   commentOnPost(postID: String!, message: String!): String!
+  editComment(postID: String!, commentID: String!, message: String!): Boolean!
   deleteComment(postID: String!, commentID: String!): Boolean!
   createAuction(offer: Float!, description: String!): Auction!
   deleteAuction(auctionID: String!): Boolean!
@@ -1852,6 +1876,36 @@ func (ec *executionContext) field_Mutation_deletePost_args(ctx context.Context, 
 		}
 	}
 	args["postID"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_editComment_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["postID"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["postID"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["commentID"]; ok {
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["commentID"] = arg1
+	var arg2 string
+	if tmp, ok := rawArgs["message"]; ok {
+		arg2, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["message"] = arg2
 	return args, nil
 }
 
@@ -3626,40 +3680,6 @@ func (ec *executionContext) _FeedPost_comments(ctx context.Context, field graphq
 	return ec.marshalNCommentList2ᚖgithubᚗcomᚋeaemenkkstudiosᚋcancanvasᚑbackendᚋgraphᚋmodelᚐCommentList(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _FeedPost_likeCount(ctx context.Context, field graphql.CollectedField, obj *model.FeedPost) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "FeedPost",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.LikeCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _FeedPost_likes(ctx context.Context, field graphql.CollectedField, obj *model.FeedPost) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -3689,9 +3709,43 @@ func (ec *executionContext) _FeedPost_likes(ctx context.Context, field graphql.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]string)
+	res := resTmp.(int)
 	fc.Result = res
-	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FeedPost_liked(ctx context.Context, field graphql.CollectedField, obj *model.FeedPost) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FeedPost",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Liked, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FeedPost_bidID(ctx context.Context, field graphql.CollectedField, obj *model.FeedPost) (ret graphql.Marshaler) {
@@ -4728,6 +4782,47 @@ func (ec *executionContext) _Mutation_commentOnPost(ctx context.Context, field g
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_editComment(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_editComment_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().EditComment(rctx, args["postID"].(string), args["commentID"].(string), args["message"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Mutation_deleteComment(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -5560,6 +5655,40 @@ func (ec *executionContext) _Post_likes(ctx context.Context, field graphql.Colle
 	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Post_liked(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Post",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Liked, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Post_bidID(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -5693,40 +5822,6 @@ func (ec *executionContext) _PostComment_text(ctx context.Context, field graphql
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PostComment_likeCount(ctx context.Context, field graphql.CollectedField, obj *model.PostComment) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "PostComment",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.LikeCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _PostComment_likes(ctx context.Context, field graphql.CollectedField, obj *model.PostComment) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -5756,9 +5851,43 @@ func (ec *executionContext) _PostComment_likes(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]string)
+	res := resTmp.(int)
 	fc.Result = res
-	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PostComment_liked(ctx context.Context, field graphql.CollectedField, obj *model.PostComment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "PostComment",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Liked, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PostComment_timestamp(ctx context.Context, field graphql.CollectedField, obj *model.PostComment) (ret graphql.Marshaler) {
@@ -8375,13 +8504,13 @@ func (ec *executionContext) _FeedPost(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "likeCount":
-			out.Values[i] = ec._FeedPost_likeCount(ctx, field, obj)
+		case "likes":
+			out.Values[i] = ec._FeedPost_likes(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "likes":
-			out.Values[i] = ec._FeedPost_likes(ctx, field, obj)
+		case "liked":
+			out.Values[i] = ec._FeedPost_liked(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -8609,6 +8738,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "editComment":
+			out.Values[i] = ec._Mutation_editComment(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "deleteComment":
 			out.Values[i] = ec._Mutation_deleteComment(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -8762,6 +8896,11 @@ func (ec *executionContext) _Post(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "liked":
+			out.Values[i] = ec._Post_liked(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "bidID":
 			out.Values[i] = ec._Post_bidID(ctx, field, obj)
 		default:
@@ -8801,13 +8940,13 @@ func (ec *executionContext) _PostComment(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "likeCount":
-			out.Values[i] = ec._PostComment_likeCount(ctx, field, obj)
+		case "likes":
+			out.Values[i] = ec._PostComment_likes(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "likes":
-			out.Values[i] = ec._PostComment_likes(ctx, field, obj)
+		case "liked":
+			out.Values[i] = ec._PostComment_liked(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
