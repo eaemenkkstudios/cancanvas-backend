@@ -151,6 +151,7 @@ type ComplexityRoot struct {
 		UpdateUserCover         func(childComplexity int, cover graphql.Upload) int
 		UpdateUserLocation      func(childComplexity int, lat float64, lng float64) int
 		UpdateUserPicture       func(childComplexity int, picture graphql.Upload) int
+		UpdateUserTags          func(childComplexity int, tags []string) int
 	}
 
 	Order struct {
@@ -230,6 +231,7 @@ type MutationResolver interface {
 	UpdateUserLocation(ctx context.Context, lat float64, lng float64) (bool, error)
 	UpdateUserBio(ctx context.Context, bio string) (bool, error)
 	UpdateUserCover(ctx context.Context, cover graphql.Upload) (string, error)
+	UpdateUserTags(ctx context.Context, tags []string) (bool, error)
 	AddTagToUser(ctx context.Context, tag string) (bool, error)
 	RemoveTagFromUser(ctx context.Context, tag string) (bool, error)
 	Follow(ctx context.Context, nickname string) (bool, error)
@@ -945,6 +947,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.UpdateUserPicture(childComplexity, args["picture"].(graphql.Upload)), true
 
+	case "Mutation.updateUserTags":
+		if e.complexity.Mutation.UpdateUserTags == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateUserTags_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateUserTags(childComplexity, args["tags"].([]string)), true
+
 	case "Order.auctionID":
 		if e.complexity.Order.AuctionID == nil {
 			break
@@ -1620,6 +1634,7 @@ type Mutation {
   updateUserLocation(lat: Float!, lng: Float!): Boolean!
   updateUserBio(bio: String!): Boolean!
   updateUserCover(cover: Upload!): String!
+  updateUserTags(tags: [String!]!): Boolean!
   addTagToUser(tag: String!): Boolean!
   removeTagFromUser(tag: String!): Boolean!
   follow(nickname: String!): Boolean!
@@ -2142,6 +2157,20 @@ func (ec *executionContext) field_Mutation_updateUserPicture_args(ctx context.Co
 		}
 	}
 	args["picture"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateUserTags_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 []string
+	if tmp, ok := rawArgs["tags"]; ok {
+		arg0, err = ec.unmarshalNString2ᚕstringᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["tags"] = arg0
 	return args, nil
 }
 
@@ -4288,6 +4317,47 @@ func (ec *executionContext) _Mutation_updateUserCover(ctx context.Context, field
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_updateUserTags(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_updateUserTags_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateUserTags(rctx, args["tags"].([]string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_addTagToUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -8675,6 +8745,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "updateUserCover":
 			out.Values[i] = ec._Mutation_updateUserCover(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "updateUserTags":
+			out.Values[i] = ec._Mutation_updateUserTags(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

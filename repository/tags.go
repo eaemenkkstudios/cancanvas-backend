@@ -15,6 +15,7 @@ type TagsRepository interface {
 	GetTags() ([]string, error)
 	GetUserTags(nickname string) ([]string, error)
 	GetUsersPerTags(tags []string, page *int) ([]*model.User, error)
+	UpdateUserTags(user string, tags []string) (bool, error)
 	AddTagToUser(user, tag string) (bool, error)
 	RemoveTagFromUser(user, tag string) (bool, error)
 }
@@ -110,6 +111,49 @@ func (db *tagsRepository) GetUsersPerTags(tags []string, page *int) ([]*model.Us
 		userList = append(userList, &user)
 	}
 	return userList, nil
+}
+
+func (db *tagsRepository) UpdateUserTags(user string, tags []string) (bool, error) {
+	collection := db.client.Collection(CollectionTags)
+	ctx := context.TODO()
+	cursor, err := collection.Find(ctx, bson.M{"users": bson.M{"$in": []string{user}}})
+	if err != nil {
+		return false, err
+	}
+	defer cursor.Close(ctx)
+	for cursor.Next(ctx) {
+		var t TagSchema
+		err = cursor.Decode(&t)
+		for i, u := range t.Users {
+			if u == user {
+				t.Users = append(t.Users[:i], t.Users[i+1:]...)
+				break
+			}
+		}
+		collection.UpdateOne(ctx, bson.M{"_id": t.ID}, bson.M{
+			"$set": bson.M{"users": t.Users},
+		})
+	}
+	if err != nil {
+		return false, err
+	}
+	cursor, err = collection.Find(ctx, bson.M{"_id": bson.M{"$in": tags}})
+	if err != nil {
+		return false, err
+	}
+	defer cursor.Close(ctx)
+	for cursor.Next(ctx) {
+		var t TagSchema
+		err = cursor.Decode(&t)
+		t.Users = append(t.Users, user)
+		collection.UpdateOne(ctx, bson.M{"_id": t.ID}, bson.M{
+			"$set": bson.M{"users": t.Users},
+		})
+	}
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 func (db *tagsRepository) AddTagToUser(user, tag string) (bool, error) {

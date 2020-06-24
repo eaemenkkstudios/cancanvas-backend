@@ -13,6 +13,15 @@ import (
 	"github.com/eaemenkkstudios/cancanvas-backend/utils"
 )
 
+var userRepository = repository.NewUserRepository()
+var authRepository = repository.NewAuthRepository()
+var chatRepository = repository.NewChatRepository()
+var postRepository = repository.NewPostRepository()
+var feedRepository = repository.NewFeedRepository()
+var tagsRepository = repository.NewTagsRepository()
+var orderRepository = repository.NewOrderRepository()
+var auctionRepository = repository.NewAuctionRepository()
+
 func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) (*model.User, error) {
 	return userRepository.CreateUser(&input)
 }
@@ -47,6 +56,14 @@ func (r *mutationResolver) UpdateUserCover(ctx context.Context, cover graphql.Up
 		return "", err
 	}
 	return userRepository.UpdateCover(sender, cover)
+}
+
+func (r *mutationResolver) UpdateUserTags(ctx context.Context, tags []string) (bool, error) {
+	sender, err := utils.GetSenderFromTokenHTTP(ctx)
+	if err != nil {
+		return true, err
+	}
+	return tagsRepository.UpdateUserTags(sender, tags)
 }
 
 func (r *mutationResolver) AddTagToUser(ctx context.Context, tag string) (bool, error) {
@@ -349,18 +366,3 @@ func (r *Resolver) Subscription() generated.SubscriptionResolver { return &subsc
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type subscriptionResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//    it when you're done.
-//  - You have helper methods in this file. Move them out to keep these resolver files clean.
-var userRepository = repository.NewUserRepository()
-var authRepository = repository.NewAuthRepository()
-var chatRepository = repository.NewChatRepository()
-var postRepository = repository.NewPostRepository()
-var feedRepository = repository.NewFeedRepository()
-var tagsRepository = repository.NewTagsRepository()
-var orderRepository = repository.NewOrderRepository()
-var auctionRepository = repository.NewAuctionRepository()

@@ -163,6 +163,7 @@ type Mutation {
   updateUserLocation(lat: Float!, lng: Float!): Boolean!
   updateUserBio(bio: String!): Boolean!
   updateUserCover(cover: Upload!): String!
+  updateUserTags(tags: [String!]!): Boolean!
   addTagToUser(tag: String!): Boolean!
   removeTagFromUser(tag: String!): Boolean!
   follow(nickname: String!): Boolean!
