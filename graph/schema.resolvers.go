@@ -263,10 +263,6 @@ func (r *queryResolver) Trending(ctx context.Context, page *int) ([]*model.FeedP
 }
 
 func (r *queryResolver) User(ctx context.Context, nickname string) (*model.User, error) {
-	nickname, err := utils.GetSenderFromTokenHTTP(ctx)
-	if err != nil {
-		return nil, err
-	}
 	return userRepository.FindOne(nickname)
 }
 
