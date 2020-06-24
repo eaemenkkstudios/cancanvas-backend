@@ -107,7 +107,7 @@ type Post struct {
 	Comments    *CommentList `json:"comments"`
 	LikeCount   int          `json:"likeCount"`
 	Likes       []string     `json:"likes"`
-	Liked       bool         `json:"liked" bson:"_id,omitempty"`
+	Liked       bool         `json:"liked" bson:"liked,omitempty"`
 	BidID       *string      `json:"bidID"`
 }
 
