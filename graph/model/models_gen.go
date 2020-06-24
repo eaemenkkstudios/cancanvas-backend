@@ -89,13 +89,13 @@ type NewUser struct {
 }
 
 type Order struct {
-	ID         string  `json:"ID"`
-	PaymentID  string  `json:"PaymentID"`
-	PaymentURL string  `json:"PaymentURL"`
-	PayerID    *string `json:"PayerID"`
-	AuctionID  string  `json:"AuctionID"`
-	BidID      string  `json:"BidID"`
-	Status     string  `json:"Status"`
+	ID         string  `json:"id"`
+	PaymentID  string  `json:"paymentID"`
+	PaymentURL string  `json:"paymentURL"`
+	PayerID    *string `json:"payerID"`
+	AuctionID  string  `json:"auctionID"`
+	BidID      string  `json:"bidID"`
+	Status     string  `json:"status"`
 }
 
 type Post struct {

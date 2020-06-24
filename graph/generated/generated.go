@@ -945,49 +945,49 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.UpdateUserPicture(childComplexity, args["picture"].(graphql.Upload)), true
 
-	case "Order.AuctionID":
+	case "Order.auctionID":
 		if e.complexity.Order.AuctionID == nil {
 			break
 		}
 
 		return e.complexity.Order.AuctionID(childComplexity), true
 
-	case "Order.BidID":
+	case "Order.bidID":
 		if e.complexity.Order.BidID == nil {
 			break
 		}
 
 		return e.complexity.Order.BidID(childComplexity), true
 
-	case "Order.ID":
+	case "Order.id":
 		if e.complexity.Order.ID == nil {
 			break
 		}
 
 		return e.complexity.Order.ID(childComplexity), true
 
-	case "Order.PayerID":
+	case "Order.payerID":
 		if e.complexity.Order.PayerID == nil {
 			break
 		}
 
 		return e.complexity.Order.PayerID(childComplexity), true
 
-	case "Order.PaymentID":
+	case "Order.paymentID":
 		if e.complexity.Order.PaymentID == nil {
 			break
 		}
 
 		return e.complexity.Order.PaymentID(childComplexity), true
 
-	case "Order.PaymentURL":
+	case "Order.paymentURL":
 		if e.complexity.Order.PaymentURL == nil {
 			break
 		}
 
 		return e.complexity.Order.PaymentURL(childComplexity), true
 
-	case "Order.Status":
+	case "Order.status":
 		if e.complexity.Order.Status == nil {
 			break
 		}
@@ -1573,13 +1573,13 @@ type User {
 }
 
 type Order {
-  ID: String!
-	PaymentID: String!
-	PaymentURL: String!
-	PayerID: String
-	AuctionID: String!
-	BidID: String!
-	Status: String!
+  id: String!
+	paymentID: String!
+	paymentURL: String!
+	payerID: String
+	auctionID: String!
+	bidID: String!
+	status: String!
 }
 
 type Login {
@@ -5151,7 +5151,7 @@ func (ec *executionContext) _Mutation_resetPassword(ctx context.Context, field g
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Order_ID(ctx context.Context, field graphql.CollectedField, obj *model.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _Order_id(ctx context.Context, field graphql.CollectedField, obj *model.Order) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -5185,7 +5185,7 @@ func (ec *executionContext) _Order_ID(ctx context.Context, field graphql.Collect
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Order_PaymentID(ctx context.Context, field graphql.CollectedField, obj *model.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _Order_paymentID(ctx context.Context, field graphql.CollectedField, obj *model.Order) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -5219,7 +5219,7 @@ func (ec *executionContext) _Order_PaymentID(ctx context.Context, field graphql.
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Order_PaymentURL(ctx context.Context, field graphql.CollectedField, obj *model.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _Order_paymentURL(ctx context.Context, field graphql.CollectedField, obj *model.Order) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -5253,7 +5253,7 @@ func (ec *executionContext) _Order_PaymentURL(ctx context.Context, field graphql
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Order_PayerID(ctx context.Context, field graphql.CollectedField, obj *model.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _Order_payerID(ctx context.Context, field graphql.CollectedField, obj *model.Order) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -5284,7 +5284,7 @@ func (ec *executionContext) _Order_PayerID(ctx context.Context, field graphql.Co
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Order_AuctionID(ctx context.Context, field graphql.CollectedField, obj *model.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _Order_auctionID(ctx context.Context, field graphql.CollectedField, obj *model.Order) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -5318,7 +5318,7 @@ func (ec *executionContext) _Order_AuctionID(ctx context.Context, field graphql.
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Order_BidID(ctx context.Context, field graphql.CollectedField, obj *model.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _Order_bidID(ctx context.Context, field graphql.CollectedField, obj *model.Order) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -5352,7 +5352,7 @@ func (ec *executionContext) _Order_BidID(ctx context.Context, field graphql.Coll
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Order_Status(ctx context.Context, field graphql.CollectedField, obj *model.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _Order_status(ctx context.Context, field graphql.CollectedField, obj *model.Order) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8805,35 +8805,35 @@ func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, ob
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Order")
-		case "ID":
-			out.Values[i] = ec._Order_ID(ctx, field, obj)
+		case "id":
+			out.Values[i] = ec._Order_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "PaymentID":
-			out.Values[i] = ec._Order_PaymentID(ctx, field, obj)
+		case "paymentID":
+			out.Values[i] = ec._Order_paymentID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "PaymentURL":
-			out.Values[i] = ec._Order_PaymentURL(ctx, field, obj)
+		case "paymentURL":
+			out.Values[i] = ec._Order_paymentURL(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "PayerID":
-			out.Values[i] = ec._Order_PayerID(ctx, field, obj)
-		case "AuctionID":
-			out.Values[i] = ec._Order_AuctionID(ctx, field, obj)
+		case "payerID":
+			out.Values[i] = ec._Order_payerID(ctx, field, obj)
+		case "auctionID":
+			out.Values[i] = ec._Order_auctionID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "BidID":
-			out.Values[i] = ec._Order_BidID(ctx, field, obj)
+		case "bidID":
+			out.Values[i] = ec._Order_bidID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "Status":
-			out.Values[i] = ec._Order_Status(ctx, field, obj)
+		case "status":
+			out.Values[i] = ec._Order_status(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

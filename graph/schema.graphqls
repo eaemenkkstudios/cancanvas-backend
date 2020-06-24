@@ -116,13 +116,13 @@ type User {
 }
 
 type Order {
-  ID: String!
-	PaymentID: String!
-	PaymentURL: String!
-	PayerID: String
-	AuctionID: String!
-	BidID: String!
-	Status: String!
+  id: String!
+	paymentID: String!
+	paymentURL: String!
+	payerID: String
+	auctionID: String!
+	bidID: String!
+	status: String!
 }
 
 type Login {
