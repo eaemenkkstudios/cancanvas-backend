@@ -68,7 +68,7 @@ func (db *feedRepository) GetFeed(nickname string, page *int) ([]*model.FeedPost
 	defer cursor.Close(ctx)
 	for cursor.Next(ctx) {
 		var p feedPost
-		err = cursor.Decode(&u)
+		err = cursor.Decode(&p)
 		liked := false
 		for _, l := range p.Likes {
 			if l == nickname {
