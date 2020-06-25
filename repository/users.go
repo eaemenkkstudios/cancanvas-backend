@@ -323,8 +323,8 @@ func (db *userRepository) UpdateCover(sender string, cover graphql.Upload) (stri
 		return "", err
 	}
 	urlPrefix := db.awsSession.GetURLPrefix()
-	if user.Picture != "" {
-		_, err := db.awsSession.DeleteFile(strings.TrimPrefix(user.Picture, urlPrefix))
+	if user.Cover != "" {
+		_, err := db.awsSession.DeleteFile(strings.TrimPrefix(user.Cover, urlPrefix))
 		if err != nil {
 			return "", err
 		}
