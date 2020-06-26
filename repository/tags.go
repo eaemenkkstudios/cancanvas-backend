@@ -106,9 +106,21 @@ func (db *tagsRepository) GetUsersPerTags(tags []string, page *int) ([]*model.Us
 	defer usersCursor.Close(usersCtx)
 	userList := make([]*model.User, 0)
 	for usersCursor.Next(usersCtx) {
-		var user model.User
+		var user UserSchema
 		err = usersCursor.Decode(&user)
-		userList = append(userList, &user)
+		userList = append(userList, &model.User{
+			Nickname:       user.Nickname,
+			Name:           user.Name,
+			Bio:            user.Bio,
+			Email:          user.Email,
+			Cover:          user.Cover,
+			Picture:        user.Picture,
+			Followers:      user.Followers,
+			FollowersCount: user.FollowersCount,
+			Following:      user.Following,
+			Lat:            user.Lat,
+			Lng:            user.Lng,
+		})
 	}
 	return userList, nil
 }
